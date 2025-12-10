@@ -60,7 +60,7 @@ function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader>
+      <SidebarHeader className={cn(expanded && "pb-1")}>
         <div
           className={cn(
             "flex justify-between items-center w-full pt-1.5 pb-4",
@@ -75,13 +75,13 @@ function AppSidebar() {
           <SidebarTrigger />
         </div>
 
-        <SidebarMenu className={expanded ? "px-2" : ""}>
+        <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
               className={
                 expanded
-                  ? "border-2 border-gray-300 rounded-lg bg-white shadow hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                  ? "h-9 border rounded-lg bg-white shadow-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
                   : ""
               }
               tooltip="New Chat"
@@ -126,8 +126,8 @@ function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className={cn("border-t", expanded ? "px-2" : "justify-center")}>
-        <NavUser name="Name" email="abcdefg123@gmail.com.my" />
+      <SidebarFooter className={cn("border-t", expanded ? "" : "justify-center")}>
+        <NavUser />
       </SidebarFooter>
 
       <SidebarRail />

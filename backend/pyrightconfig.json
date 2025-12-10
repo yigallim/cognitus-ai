@@ -1,0 +1,4 @@
+{
+  "executionEnvironments": [{ "root": "." }],
+  "include": ["src"]
+}
