@@ -1,4 +1,12 @@
 {
   "executionEnvironments": [{ "root": "." }],
-  "include": ["src"]
+  "include": ["src"],
+  "typeCheckingMode": "standard",
+
+  "reportUnknownMemberType": false,
+  "reportUnknownArgumentType": false,
+  "reportUnknownVariableType": false,
+  "reportUnknownParameterType": false,
+
+  "reportAny": false
 }
