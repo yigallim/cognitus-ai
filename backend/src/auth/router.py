@@ -10,7 +10,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login", response_model=LoginResponse)
 async def login(login_data: LoginRequest, response: Response):
-    user = auth_service.authenticate_user(login_data.email, login_data.password)
+    user = await auth_service.authenticate_user(login_data.email, login_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -19,7 +19,7 @@ async def login(login_data: LoginRequest, response: Response):
     
     access_token = create_access_token(data={"sub": user.email})
     refresh_token = create_refresh_token(data={"sub": user.email})
-    auth_service.store_refresh_token(refresh_token, user.email)
+    await auth_service.store_refresh_token(refresh_token, user.email)
     
     response.set_cookie(
         key="refresh_token",
@@ -58,16 +58,16 @@ async def refresh_token(response: Response, refresh_token: Annotated[str | None,
             detail="Invalid token payload: email missing or not a string",
         )
     
-    if not auth_service.is_refresh_token_valid(token):
+    if not await auth_service.is_refresh_token_valid(token):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token has been revoked or is invalid",
         )
 
-    auth_service.revoke_refresh_token(token)
+    await auth_service.revoke_refresh_token(token)
     new_access_token = create_access_token(data={"sub": email})
     new_refresh_token = create_refresh_token(data={"sub": email})
-    auth_service.store_refresh_token(new_refresh_token, email)
+    await auth_service.store_refresh_token(new_refresh_token, email)
     
     response.set_cookie(
         key="refresh_token",
@@ -85,7 +85,7 @@ async def refresh_token(response: Response, refresh_token: Annotated[str | None,
 @router.post("/logout")
 async def logout(response: Response, refresh_token: Annotated[str | None, Cookie()] = None):
     if refresh_token:
-        auth_service.revoke_refresh_token(refresh_token)
+        await auth_service.revoke_refresh_token(refresh_token)
     
     response.delete_cookie(key="refresh_token")
     return {"message": "Successfully logged out"}
