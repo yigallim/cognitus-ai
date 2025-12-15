@@ -13,7 +13,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "../components/ui/sidebar";
-import { MessageSquare, BookOpen, Folder, Link as LinkIcon, SquarePen } from "lucide-react";
+import { MessageSquare, Folder, Link as LinkIcon, SquarePen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import NavUser from "./NavUser";
 import CollapsibleChat from "./CollapsibleChat";
@@ -33,19 +33,14 @@ function AppSidebar() {
         // replace by the actual chat history
         {
           title: "Chat 1",
-          url: "/",
+          url: "/chat1",
         },
         {
           title: "Chat 2",
-          url: "/",
+          url: "/chat2",
         },
       ],
     },
-    // {
-    //     title: "Notebooks",
-    //     icon: BookOpen,
-    //     url: "/notebooks",
-    // },
     {
       title: "Files",
       icon: Folder,
@@ -54,7 +49,7 @@ function AppSidebar() {
     {
       title: "Data Connectors",
       icon: LinkIcon,
-      url: "/dataConnectors",
+      url: "/data-connectors",
     },
   ];
 

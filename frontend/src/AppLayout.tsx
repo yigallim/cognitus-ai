@@ -1,6 +1,6 @@
 import "./App.css";
 import AppSidebar from "./sidebar/AppSidebar";
-import { Settings } from "lucide-react";
+import { Server, Settings } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "./components/ui/sidebar";
 import "@fontsource/libre-baskerville/index.css";
@@ -10,6 +10,11 @@ function AppLayout({ children }: { children: ReactNode }) {
   function settings() {
     // pop up the settings panel
     alert("Settings panel is under development.");
+  }
+
+  function container() {
+    // pop up the settings panel
+    alert("Container panel is under development.");
   }
 
   return (
@@ -22,7 +27,10 @@ function AppLayout({ children }: { children: ReactNode }) {
             <SidebarTrigger className="md:hidden mr-2" />
 
             <div className="flex w-full justify-end items-center gap-2">
-              <p className="font-semibold text-lg">Connected</p>
+              <Button variant="ghost" onClick={container}>
+                <Server className="w-4 h-4" />
+                <p className="font-semibold text-lg">Connected</p>
+              </Button>
               <Button variant="ghost" onClick={settings}>
                 <Settings className="w-4 h-4" />
               </Button>
