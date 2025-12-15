@@ -92,17 +92,6 @@ function ChatInput({ chatMessages, setChatMessages, files }: ChatInputProps) {
       parts: [{
         type: 'text',
         text: `
-\`\`\`jsx
-// Without useCallback - the function is recreated on every render
-const handleClick = () => {
-  console.log(count);
-};
-
-// With useCallback - the function is only recreated when dependencies change
-const handleClick = useCallback(() => {
-  console.log(count);
-}, [count]);
-\`\`\`
 This is example codes.\n\n
 \`\`\`python
 # Load labelled.csv and do an initial inspection
