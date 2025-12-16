@@ -1,5 +1,0 @@
-dockerfiles
-manager
-node
-sdk
-test
