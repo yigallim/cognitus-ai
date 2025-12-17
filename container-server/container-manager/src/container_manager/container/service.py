@@ -1,4 +1,4 @@
-import nanoid
+from cuid2 import cuid_wrapper
 import secrets
 from typing import Dict, Optional
 from docker.errors import NotFound
@@ -8,26 +8,25 @@ from container_manager.connections import docker_client
 from .repository import ContainerRepository
 from .schemas import ContainerSchema, JupyterConnection
 
+cuid = cuid_wrapper()
+
 class ContainerService:
     def __init__(self):
         self.repo = ContainerRepository()
 
     async def create_container(self) -> str:
-        container_id = nanoid.generate()
+        container_id = cuid()
         token = secrets.token_urlsafe(32)
 
         try:
             def _start_container():
-                # We need to access docker_client.containers which is what docker_client probably is or has
-                # Original code: docker_client.containers.run
                 docker_container = docker_client.containers.run(
-                    image="jupyter/scipy-notebook:x86_64-python-3.11.6",
-                    name=f"jupyter-{container_id}",
+                    image="container-node-app:latest",
+                    name=f"{container_id}",
                     detach=True,
                     ports={"8888/tcp": 8888},
                     environment={
-                        "JUPYTER_TOKEN": token,
-                        "JUPYTER_ENABLE_LAB": "yes",
+                        "ACCESS_TOKEN": token,
                     },
                     labels={
                         "created_by": "container_manager",
@@ -47,9 +46,7 @@ class ContainerService:
                     host=port_info["HostIp"],
                     port=port_info["HostPort"],
                     token=token,
-                    url=f"http://localhost:{port_info['HostPort']}/?token={token}",
                 ),
-                envs={},
             )
 
             await self.repo.save(container_id, container_data.model_dump())

@@ -11,7 +11,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { UserProfileModal } from "@/components/UserProfileModal";
 import { useState } from "react";
 
-import api from "@/lib/api";
+import { logout as logoutApi } from "@/api/auth";
 
 function NavUser() {
   const logout = useAuthStore((s) => s.logout);
@@ -20,7 +20,7 @@ function NavUser() {
 
   const handleLogout = async () => {
     try {
-      await api.post("/auth/logout");
+      await logoutApi();
     } catch (error) {
       console.error("Logout failed upstream", error);
     } finally {

@@ -1,49 +1,106 @@
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { Search, Download, Trash, MessagesSquare, UploadCloud, Slash } from "lucide-react";
+import toast from "react-hot-toast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { uploadFile, fetchFiles, deleteFile, downloadFile } from "@/api/files";
+import {
+  Search,
+  Download,
+  Trash,
+  MessagesSquare,
+  UploadCloud,
+  Slash,
+  Loader2,
+  RefreshCw,
+  File,
+  FileText,
+  FileSpreadsheet,
+  FileJson,
+} from "lucide-react";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { Checkbox } from "../components/ui/checkbox";
-
-// download file
-import JSZip from "jszip";
 import { saveAs } from "file-saver";
 
 type UploadedFile = {
   id: string;
-  file: File;
-  uploadedAt: Date;
+  filename: string;
+  size: number;
+  content_type: string;
+  uploadedAt: string;
+};
+
+const getFileIcon = (filename: string) => {
+  const extension = filename.split(".").pop()?.toLowerCase();
+
+  switch (extension) {
+    case "pdf":
+      return <File className="w-6 h-6 text-red-500" />;
+    case "csv":
+    case "xlsx":
+      return <FileSpreadsheet className="w-6 h-6 text-green-600" />;
+    case "json":
+      return <FileJson className="w-6 h-6 text-yellow-500" />;
+    case "md":
+    case "txt":
+      return <FileText className="w-6 h-6 text-blue-500" />;
+    default:
+      return <File className="w-6 h-6 text-gray-400" />;
+  }
 };
 
 function FilesPage() {
-  const [files, setFiles] = useState<UploadedFile[]>([]);
+  const queryClient = useQueryClient();
+  const {
+    data: files = [],
+    isLoading: isLoadingFiles,
+    refetch,
+    isRefetching,
+  } = useQuery<UploadedFile[]>({
+    queryKey: ["files"],
+    queryFn: fetchFiles,
+    staleTime: 1000 * 60 * 3,
+  });
+
   const [searchText, setSearchText] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Handle file upload
-  const handleUpload = (newFiles: FileList | null) => {
+  const handleUpload = async (newFiles: FileList | null) => {
     if (!newFiles) return;
 
-    // check whether the redundant files name exists & pop up alert dialog if redundant
-    const existingFileNames = new Set(files.map((f) => f.file.name));
+    const existingFileNames = new Set(files.filter((f) => f?.filename).map((f) => f.filename));
     for (let i = 0; i < newFiles.length; i++) {
       if (existingFileNames.has(newFiles[i].name)) {
-        alert(
+        toast.error(
           `File "${newFiles[i].name}" already exists. Please rename the file before uploading.`
         );
         return;
       }
     }
 
-    const toAdd = Array.from(newFiles).map((file) => ({
-      id: crypto.randomUUID(),
-      file,
-      uploadedAt: new Date(),
-    }));
+    setIsActionLoading(true);
+    const uploadPromises = Array.from(newFiles).map(async (file) => {
+      try {
+        const uploaded = await uploadFile(file);
+        return uploaded;
+      } catch (error) {
+        console.error(`Failed to upload ${file.name}:`, error);
+        toast.error(`Failed to upload ${file.name}`);
+        return null;
+      }
+    });
 
-    setFiles((prev) => [...prev, ...toAdd]);
+    const results = await Promise.all(uploadPromises);
+    setIsActionLoading(false);
+    const successfulUploads = results.filter((f) => f !== null) as UploadedFile[];
+
+    if (successfulUploads.length > 0) {
+      queryClient.invalidateQueries({ queryKey: ["files"] });
+      toast.success(`Successfully uploaded ${successfulUploads.length} file(s).`);
+    }
   };
 
   // Drag & Drop
@@ -52,12 +109,11 @@ function FilesPage() {
     handleUpload(e.dataTransfer.files);
   };
 
-  // File filtering
-  const filteredFiles = files.filter((f) =>
-    f.file.name.toLowerCase().includes(searchText.toLowerCase())
-  );
+  const filteredFiles = files.filter((f) => {
+    if (!searchText) return true;
+    return f?.filename?.toLowerCase().includes(searchText.toLowerCase());
+  });
 
-  // select all checkbox handler
   const toggleSelectAll = (checked: boolean) => {
     const newSelection: Record<string, boolean> = {};
 
@@ -77,20 +133,27 @@ function FilesPage() {
   };
 
   // delete selected files
-  const deleteSelected = () => {
+  const deleteSelected = async () => {
     const idsToDelete = Object.keys(selected).filter((id) => selected[id]);
 
     if (idsToDelete.length === 0) return;
 
-    const remaining = files.filter((f) => !idsToDelete.includes(f.id));
-
-    setFiles(remaining); // remove from state
-    setSelected({}); // clear selection
+    setIsActionLoading(true);
+    try {
+      await Promise.all(idsToDelete.map((id) => deleteFile(id)));
+      queryClient.invalidateQueries({ queryKey: ["files"] });
+      setSelected({}); // clear selection
+      toast.success("Files deleted successfully.");
+    } catch (error) {
+      console.error("Failed to delete files:", error);
+      toast.error("Failed to delete some files.");
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
-  // download selected files as zip
+  // download selected files
   const downloadSelected = async () => {
-    const zip = new JSZip();
     const idsToDownload = Object.keys(selected).filter((id) => selected[id]);
 
     if (idsToDownload.length === 0) return;
@@ -98,12 +161,15 @@ function FilesPage() {
     for (const id of idsToDownload) {
       const fileObj = files.find((f) => f.id === id);
       if (fileObj) {
-        zip.file(fileObj.file.name, fileObj.file);
+        try {
+          const blob = await downloadFile(fileObj.id);
+          saveAs(blob, fileObj.filename);
+        } catch (error) {
+          console.error(`Failed to download file ${fileObj.filename}:`, error);
+          toast.error(`Failed to download ${fileObj.filename}`);
+        }
       }
     }
-
-    const blob = await zip.generateAsync({ type: "blob" });
-    saveAs(blob, "files.zip");
   };
 
   const handleChatWithFiles = () => {
@@ -114,7 +180,7 @@ function FilesPage() {
     navigate("/", {
       state: {
         mode: "chat-with-files",
-        files: selectedFiles.map((f) => f.file),
+        files: selectedFiles,
       },
     });
   };
@@ -149,11 +215,11 @@ function FilesPage() {
       <div className="flex justify-between items-center mt-10 mb-4">
         {/* ----- Header: Search + buttons ----- */}
         <div className="relative w-1/3">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted-light" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 text-text-muted-light" />
           <Input
             type="text"
             placeholder="Search files..."
-            className="w-full pl-10 py-2 border border-gray-300 rounded-lg text-text-desc-light focus:ring-[var(--primary)] focus:border-[var(--primary)]"
+            className="w-full pl-10 py-2 border border-gray-300 rounded-lg text-text-desc-light focus:ring-primary focus:border-primary"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
           />
@@ -166,7 +232,7 @@ function FilesPage() {
             onClick={downloadSelected}
             disabled={Object.values(selected).every((v) => !v)}
           >
-            <Download className="w-4 h-4" /> Download
+            <Download className="w-6 h-6" /> Download
           </Button>
 
           <Button
@@ -175,16 +241,31 @@ function FilesPage() {
             onClick={deleteSelected}
             disabled={Object.values(selected).every((v) => !v)}
           >
-            <Trash className="w-4 h-4" /> Delete
+            <Trash className="w-6 h-6" /> Delete
           </Button>
 
           <Button
             variant="outline"
             className="flex gap-2"
             onClick={handleChatWithFiles}
-            disabled={Object.values(selected).every((v) => !v)}
+            disabled={Object.values(selected).every((v) => !v) || isActionLoading}
           >
-            <MessagesSquare className="w-4 h-4" /> Chat with Files
+            {isActionLoading ? (
+              <Loader2 className="w-6 h-6 animate-spin" />
+            ) : (
+              <MessagesSquare className="w-6 h-6" />
+            )}{" "}
+            Chat with Files
+          </Button>
+
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => refetch()}
+            disabled={isLoadingFiles || isActionLoading}
+            title="Refresh files"
+          >
+            <RefreshCw className={`w-6 h-6 ${isRefetching ? "animate-spin" : ""}`} />
           </Button>
         </div>
       </div>
@@ -206,7 +287,14 @@ function FilesPage() {
           </thead>
 
           <tbody>
-            {filteredFiles.length === 0 ? (
+            {isLoadingFiles || isRefetching ? (
+              <tr>
+                <td colSpan={4} className="px-6 py-16 text-center text-text-desc-light">
+                  <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin text-primary" />
+                  <p>Loading your files...</p>
+                </td>
+              </tr>
+            ) : filteredFiles.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-6 py-16 text-center text-text-desc-light">
                   <Slash className="w-12 h-12 mx-auto mb-4 text-gray-500" />
@@ -226,10 +314,24 @@ function FilesPage() {
                       onCheckedChange={(v) => toggleSelect(f.id, !!v)}
                     />
                   </td>
-                  <td className="px-6 py-3">{f.file.name}</td>
-                  <td className="px-6 py-3">{(f.file.size / 1024).toFixed(1)} KB</td>
                   <td className="px-6 py-3">
-                    {f.uploadedAt.toLocaleDateString()} {f.uploadedAt.toLocaleTimeString()}
+                    <div className="flex items-center gap-2">
+                      {getFileIcon(f.filename)}
+                      <span className="truncate" title={f.filename}>
+                        {f.filename}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-3">{(f.size / 1024).toFixed(1)} KB</td>
+                  <td className="px-6 py-3">
+                    {f.uploadedAt ? (
+                      <>
+                        {new Date(f.uploadedAt).toLocaleDateString()}{" "}
+                        {new Date(f.uploadedAt).toLocaleTimeString()}
+                      </>
+                    ) : (
+                      <span className="text-gray-400">N/A</span>
+                    )}
                   </td>
                 </tr>
               ))

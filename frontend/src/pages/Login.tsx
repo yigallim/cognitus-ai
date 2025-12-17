@@ -5,7 +5,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useState } from "react";
-import api from "@/lib/api";
+import { login as loginApi } from "@/api/auth";
 import { useNavigate } from "react-router";
 
 function LoginForm() {
@@ -19,12 +19,12 @@ function LoginForm() {
     e.preventDefault();
 
     try {
-      const res = await api.post("/auth/login", {
+      const data = await loginApi({
         email,
         password,
       });
-      console.log(res.data);
-      login(res.data.access_token, res.data.user);
+      console.log(data);
+      login(data.access_token, data.user);
       navigate("/");
     } catch (err) {
       console.error(err);

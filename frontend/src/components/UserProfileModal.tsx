@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import api from "@/lib/api";
+import { getCurrentUser } from "@/api/auth";
 import { Loader2 } from "lucide-react";
 import { useAuthStore } from "@/stores/useAuthStore";
 
@@ -18,10 +18,9 @@ export function UserProfileModal({ open, onOpenChange }: UserProfileModalProps) 
     if (open) {
       setLoading(true);
       setError("");
-      api
-        .get("/auth/me")
-        .then((res) => {
-          setUser(res.data);
+      getCurrentUser()
+        .then((data) => {
+          setUser(data);
         })
         .catch((err) => {
           console.error(err);

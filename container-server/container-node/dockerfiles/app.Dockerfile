@@ -12,6 +12,14 @@ COPY src ./src
 
 RUN uv sync --locked --no-dev
 
+RUN addgroup --system cognitusgrp \
+ && adduser --system --ingroup cognitusgrp cognitus
+
+RUN chown -R root:root /app \
+ && chmod -R 550 /app
+
 EXPOSE 31942
 
-CMD ["uv", "run", "uvicorn", "src.container-node.main:app", "--host", "0.0.0.0", "--port", "31942"]
+USER appuser
+
+CMD ["uv", "run", "uvicorn", "src.container_node.main:app", "--host", "0.0.0.0", "--port", "31942"]

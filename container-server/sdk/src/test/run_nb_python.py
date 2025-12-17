@@ -1,6 +1,6 @@
 import asyncio
-from sdk.container import Container
-from sdk.base_python_env import BasePythonEnv
+from sdk.container.container import Container
+from sdk.env.base_python_env import BasePythonEnv
 
 async def main():
     print("hi")

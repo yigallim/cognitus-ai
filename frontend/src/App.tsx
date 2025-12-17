@@ -3,6 +3,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { useEffect } from "react";
 import AppLayout from "./AppLayout";
 import AppRoutes from "./AppRoutes";
+import { Toaster } from "react-hot-toast";
 
 function App() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -23,6 +24,7 @@ function App() {
       ) : (
         <AppRoutes />
       )}
+      <Toaster />
     </>
   );
 }

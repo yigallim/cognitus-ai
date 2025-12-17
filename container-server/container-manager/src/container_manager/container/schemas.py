@@ -6,7 +6,6 @@ class JupyterConnection(BaseModel):
     host: str
     port: str
     token: str
-    url: str
 
 class ContainerSchema(BaseModel):
     name: str

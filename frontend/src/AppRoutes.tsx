@@ -1,16 +1,16 @@
-import { Route, Routes } from 'react-router';
-import DataConnectorsPage from './pages/dataConnector/DataConnectorsPage';
-import ChatsPage from './pages/chats/ChatsPage';
-import FilesPage from './pages/FilesPage';
-import PublicRoute from './routes/PublicRoute';
-import ProtectedRoute from './routes/ProtectedRoutes';
-import LoginForm from './pages/Login';
+import { Route, Routes } from "react-router";
+import DataConnectorsPage from "./pages/dataConnector/DataConnectorsPage";
+import ChatsPage from "./pages/chats/ChatsPage";
+import FilesPage from "./pages/FilesPage";
+import PublicRoute from "./routes/PublicRoute";
+import ProtectedRoute from "./routes/ProtectedRoutes";
+import LoginForm from "./pages/Login";
 
 // temp
-import { type UIMessage } from 'ai';
+import { type UIMessage } from "ai";
 
 function AppRoutes() {
-const initialMessages1: UIMessage[] = [
+  const initialMessages1: UIMessage[] = [
     {
       id: "1",
       role: "user",
@@ -37,7 +37,7 @@ const initialMessages1: UIMessage[] = [
 - **useEffect** - for side effects like data fetching
 - **useContext** - for consuming context values
 - **useRef** - for accessing DOM elements
-        `
+        `,
         },
       ],
     },
@@ -82,64 +82,63 @@ Simple Table:
     },
   ];
 
+  return (
+    <Routes>
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <LoginForm />
+          </PublicRoute>
+        }
+      />
 
-    return (
-        <Routes>
-            <Route
-                path='/login'
-                element={
-                    <PublicRoute>
-                        <LoginForm />
-                    </PublicRoute>
-                }
-            />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <ChatsPage initialMessages={[]} />
+          </ProtectedRoute>
+        }
+      />
 
-            <Route
-                path='/'
-                element={
-                    <ProtectedRoute>
-                        <ChatsPage initialMessages={[]}/>
-                    </ProtectedRoute>
-                }
-            />
+      <Route
+        path="/files"
+        element={
+          <ProtectedRoute>
+            <FilesPage />
+          </ProtectedRoute>
+        }
+      />
 
-            <Route
-                path="/files"
-                element={
-                    <ProtectedRoute>
-                        <FilesPage />
-                    </ProtectedRoute>
-                }
-            />
+      <Route
+        path="/data-connectors"
+        element={
+          <ProtectedRoute>
+            <DataConnectorsPage />
+          </ProtectedRoute>
+        }
+      />
 
-            <Route
-                path="/data-connectors"
-                element={
-                    <ProtectedRoute>
-                        <DataConnectorsPage />
-                    </ProtectedRoute>
-                }
-            />
-
-            {/* temporary route for testing */}
-            <Route
-                path="/chat1"
-                element={
-                    <ProtectedRoute>
-                        <ChatsPage initialMessages={initialMessages1} />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/chat2"
-                element={
-                    <ProtectedRoute>
-                        <ChatsPage initialMessages={initialMessages2} />
-                    </ProtectedRoute>
-                }
-            />
-        </Routes>
-    );
+      {/* temporary route for testing */}
+      <Route
+        path="/chat1"
+        element={
+          <ProtectedRoute>
+            <ChatsPage initialMessages={initialMessages1} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/chat2"
+        element={
+          <ProtectedRoute>
+            <ChatsPage initialMessages={initialMessages2} />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
+  );
 }
 
 export default AppRoutes;
