@@ -21,6 +21,7 @@ import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { Checkbox } from "../components/ui/checkbox";
 import { saveAs } from "file-saver";
+import { ALLOWED_EXTENSIONS } from "@/lib/constants";
 
 type UploadedFile = {
   id: string;
@@ -71,18 +72,33 @@ function FilesPage() {
   const handleUpload = async (newFiles: FileList | null) => {
     if (!newFiles) return;
 
+    const filesArray = Array.from(newFiles);
+
+    // Validate extensions
+    const invalidFiles = filesArray.filter((file) => {
+      const ext = `.${file.name.split(".").pop()?.toLowerCase()}`;
+      return !ALLOWED_EXTENSIONS.includes(ext);
+    });
+
+    if (invalidFiles.length > 0) {
+      toast.error(
+        `Invalid file type: ${invalidFiles[0].name}. Only ${ALLOWED_EXTENSIONS.join(
+          ", "
+        )} files are accepted.`
+      );
+      return;
+    }
+
     const existingFileNames = new Set(files.filter((f) => f?.filename).map((f) => f.filename));
-    for (let i = 0; i < newFiles.length; i++) {
-      if (existingFileNames.has(newFiles[i].name)) {
-        toast.error(
-          `File "${newFiles[i].name}" already exists. Please rename the file before uploading.`
-        );
+    for (const file of filesArray) {
+      if (existingFileNames.has(file.name)) {
+        toast.error(`File "${file.name}" already exists. Please rename the file before uploading.`);
         return;
       }
     }
 
     setIsActionLoading(true);
-    const uploadPromises = Array.from(newFiles).map(async (file) => {
+    const uploadPromises = filesArray.map(async (file) => {
       try {
         const uploaded = await uploadFile(file);
         return uploaded;
@@ -202,11 +218,15 @@ function FilesPage() {
         <UploadCloud className="w-12 h-12 mx-auto text-gray-500" />
         <p className="font-semibold text-lg">Drag & Drop your files here</p>
         <p>or click to upload</p>
+        <p className="text-xs text-gray-400 mt-2">
+          Accepted formats: {ALLOWED_EXTENSIONS.join(", ")}
+        </p>
         <input
           ref={fileInputRef}
           type="file"
           className="hidden"
           multiple
+          accept={ALLOWED_EXTENSIONS.join(",")}
           onChange={(e) => handleUpload(e.target.files)}
         />
       </div>

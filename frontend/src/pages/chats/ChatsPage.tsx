@@ -2,7 +2,7 @@
 
 import { useLocation } from "react-router";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, type UIMessage } from "ai";
+import { type UIMessage } from "ai";
 import { Conversation } from "@/components/ai-elements/conversation";
 import { PromptInputProvider } from "@/components/ai-elements/prompt-input";
 import { useEffect, useState } from "react";
@@ -22,7 +22,6 @@ function ChatsPage({ initialMessages }: { initialMessages: UIMessage[] }) {
   useEffect(() => {
     setMessages(initialMessages);
   }, [initialMessages]);
-
 
   // handle the files sent from FilesPage
   const location = useLocation();

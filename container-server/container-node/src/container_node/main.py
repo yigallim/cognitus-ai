@@ -5,9 +5,11 @@ import shlex
 from container_node.code_interpreter.python_notebook import PythonNotebook
 from container_node.config import get_settings
 from container_node.files.router import router as files_router
+from container_node.environment.router import router as envs_router
 
 app = FastAPI()
 app.include_router(files_router)
+app.include_router(envs_router)
 
 @app.get("/health")
 async def health_check():

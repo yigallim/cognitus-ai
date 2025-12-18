@@ -2,7 +2,10 @@ import httpx
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 import io
+import os
 from typing import Annotated, List
+
+ALLOWED_EXTENSIONS = {".csv", ".xlsx", ".json", ".txt", ".md", ".pdf"}
 
 from cognitus_ai.auth.dependencies import get_current_user
 from cognitus_ai.auth.schemas import User
@@ -17,6 +20,13 @@ async def upload_file(
 ):
     if not file.filename:
         raise HTTPException(status_code=400, detail="No filename provided")
+    
+    file_ext = os.path.splitext(file.filename)[1].lower()
+    if file_ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"File extension {file_ext} not allowed. Supported: {', '.join(ALLOWED_EXTENSIONS)}"
+        )
         
     try:
         container = await Container.create(str(current_user.id))
