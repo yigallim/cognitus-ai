@@ -17,6 +17,7 @@ import { MessageSquare, Folder, Link as LinkIcon, SquarePen } from "lucide-react
 import { cn } from "@/lib/utils";
 import NavUser from "./NavUser";
 import CollapsibleChat from "./CollapsibleChat";
+import { CHAT_SESSIONS } from "@/lib/constants";
 
 function AppSidebar() {
   const location = useLocation();
@@ -29,17 +30,10 @@ function AppSidebar() {
       title: "Chats",
       icon: MessageSquare,
       url: "/",
-      items: [
-        // replace by the actual chat history
-        {
-          title: "Chat 1",
-          url: "/chat1",
-        },
-        {
-          title: "Chat 2",
-          url: "/chat2",
-        },
-      ],
+      items: CHAT_SESSIONS.map((session) => ({
+        title: session.title,
+        url: session.url,
+      })),
     },
     {
       title: "Files",

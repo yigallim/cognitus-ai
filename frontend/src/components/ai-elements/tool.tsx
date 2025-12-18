@@ -1,11 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import type { ToolUIPart } from "ai";
 import {
@@ -15,19 +11,21 @@ import {
   ClockIcon,
   Code2Icon,
   XCircleIcon,
+  Table,
+  FileText,
+  LineChart,
+  Image as ImageIcon,
 } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import { isValidElement } from "react";
 import { CodeBlock, CodeBlockCopyButton } from "./code-block";
 import type { BundledLanguage } from "shiki";
+import type { CodeOutput } from "@/pages/chats/ExpandedCodeBlock";
 
 export type ToolProps = ComponentProps<typeof Collapsible>;
 
 export const Tool = ({ className, ...props }: ToolProps) => (
-  <Collapsible
-    className={cn("not-prose mb-2 w-full rounded-md border", className)}
-    {...props}
-  />
+  <Collapsible className={cn("not-prose mb-2 w-full rounded-md border", className)} {...props} />
 );
 
 export type ToolHeaderProps = {
@@ -76,10 +74,7 @@ export const ToolHeader = ({
   ...props
 }: ToolHeaderProps) => (
   <CollapsibleTrigger
-    className={cn(
-      "group flex w-full items-center justify-between gap-4 p-3",
-      className
-    )}
+    className={cn("group flex w-full items-center justify-between gap-4 p-3", className)}
     {...props}
   >
     <div className="flex items-center gap-2">
@@ -115,15 +110,17 @@ export const ToolInput = ({ className, input, languages, ...props }: ToolInputPr
     {languages && (
       <div className="flex items-center gap-2">
         <img src={languages.logo} alt={languages.name} className="w-5 h-5" />
-        <h4 className="font-medium text-sm tracking-wide">
-          {languages?.name ?? ""}
-        </h4>
+        <h4 className="font-medium text-sm tracking-wide">{languages?.name ?? ""}</h4>
       </div>
     )}
 
     <div className="rounded-md bg-muted/50">
       {/* <CodeBlock code={JSON.stringify(input, null, 2)} language="json"  /> */}
-      <CodeBlock code={input as string} language={languages?.name.toLowerCase() as BundledLanguage} showLineNumbers={true}>
+      <CodeBlock
+        code={input as string}
+        language={languages?.name.toLowerCase() as BundledLanguage}
+        showLineNumbers={true}
+      >
         <CodeBlockCopyButton />
       </CodeBlock>
     </div>
@@ -135,12 +132,7 @@ export type ToolOutputProps = ComponentProps<"div"> & {
   errorText: ToolUIPart["errorText"];
 };
 
-export const ToolOutput = ({
-  className,
-  output,
-  errorText,
-  ...props
-}: ToolOutputProps) => {
+export const ToolOutput = ({ className, output, errorText, ...props }: ToolOutputProps) => {
   if (!(output || errorText)) {
     return null;
   }
@@ -148,9 +140,7 @@ export const ToolOutput = ({
   let Output = <div>{output as ReactNode}</div>;
 
   if (typeof output === "object" && !isValidElement(output)) {
-    Output = (
-      <CodeBlock code={JSON.stringify(output, null, 2)} language="json" />
-    );
+    Output = <CodeBlock code={JSON.stringify(output, null, 2)} language="json" />;
   } else if (typeof output === "string") {
     // Output = <CodeBlock code={output} language="json" />;
     Output = (
@@ -168,13 +158,52 @@ export const ToolOutput = ({
       <div
         className={cn(
           "overflow-x-auto rounded-md text-xs [&_table]:w-full",
-          errorText
-            ? "bg-destructive/10 text-destructive"
-            : ""
+          errorText ? "bg-destructive/10 text-destructive" : ""
         )}
       >
         {errorText && <div>{errorText}</div>}
         {Output}
+      </div>
+    </div>
+  );
+};
+
+export const ToolOutputItems = ({ items }: { items: CodeOutput[] }) => {
+  return (
+    <div className="flex flex-wrap gap-3 px-4 py-4">
+      {items.map((item, index) => (
+        <ToolOutputItem key={index} item={item} />
+      ))}
+    </div>
+  );
+};
+
+const ToolOutputItem = ({ item }: { item: CodeOutput }) => {
+  const Icon =
+    {
+      table: Table,
+      text: FileText,
+      chart: LineChart,
+      image: ImageIcon,
+    }[item.type] || FileText;
+
+  const titleMapping: Record<CodeOutput["type"], string> = {
+    table: "Table",
+    text: "Text",
+    chart: "Chart",
+    image: "Image",
+  };
+
+  const title = item.title || titleMapping[item.type];
+
+  return (
+    <div className="flex border rounded-xl overflow-hidden cursor-pointer hover:bg-muted/50 transition-colors w-fit min-w-[160px] bg-white group transition-all duration-200 active:scale-95">
+      <div className="bg-muted px-4 py-4 flex items-center justify-center border-r group-hover:bg-muted/80">
+        <Icon className="size-6 text-muted-foreground" />
+      </div>
+      <div className="px-3 py-2 flex flex-col justify-center">
+        <span className="text-sm font-semibold text-gray-800">{title}</span>
+        <span className="text-[11px] text-gray-400 font-medium">Click to view</span>
       </div>
     </div>
   );

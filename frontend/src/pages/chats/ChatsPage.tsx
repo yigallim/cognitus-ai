@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import ChatMessages from "./ChatMessages";
 import ChatInput from "./ChatInput";
 
-function ChatsPage({ initialMessages }: { initialMessages: UIMessage[] }) {
+function ChatsPage({ chatId, initialMessages }: { chatId: string; initialMessages: UIMessage[] }) {
   // status: pending to be used for the streaming
   // sendMessage: function to send message (api call)
   const { messages, setMessages, status, sendMessage } = useChat({
@@ -32,7 +32,7 @@ function ChatsPage({ initialMessages }: { initialMessages: UIMessage[] }) {
       {messages.length > 0 ? (
         <>
           <Conversation>
-            <ChatMessages chatMessages={messages} />
+            <ChatMessages chatId={chatId} chatMessages={messages} />
           </Conversation>
         </>
       ) : (

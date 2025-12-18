@@ -1,29 +1,56 @@
-import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from '@/components/ai-elements/tool.tsx';
-import pythonLogo from '../../assets/pythonicon.webp';
+import {
+  Tool,
+  ToolContent,
+  ToolHeader,
+  ToolInput,
+  ToolOutput,
+  ToolOutputItems,
+} from "@/components/ai-elements/tool.tsx";
+import pythonLogo from "../../assets/pythonicon.webp";
 
 const programmingLanguages = [
-    { name: "Python", logo: pythonLogo },
-    { name: "jsx", logo: pythonLogo }
-]
+  { name: "Python", logo: pythonLogo },
+  { name: "jsx", logo: pythonLogo },
+];
 
-type CodeBlockProps = {
-    title: string;
-    code: string;
-    language: string;
-    codeExplanation: string;
-    errorText?: string;
+export interface CodeOutput {
+  type: "table" | "text" | "image" | "chart";
+  title?: string;
+  content?: string;
 }
 
-function ExpandedCodeBlock({ title, code, language, codeExplanation, errorText }: CodeBlockProps) {
-    return (
-        <Tool defaultOpen={true} className='bg-muted/100 border-black-200 border-1 rounded-xl'>
-            <ToolHeader title={title} />
-            <ToolContent>
-                <ToolInput input={code} languages={programmingLanguages.find(lang => lang.name.toLowerCase() === language.toLowerCase())} />
-                <ToolOutput output={codeExplanation} errorText={errorText} />
-            </ToolContent>
-        </Tool>
-    );
+type CodeBlockProps = {
+  title: string;
+  code: string;
+  language: string;
+  codeExplanation: string;
+  errorText?: string;
+  outputs?: CodeOutput[];
+};
+
+function ExpandedCodeBlock({
+  title,
+  code,
+  language,
+  codeExplanation,
+  errorText,
+  outputs,
+}: CodeBlockProps) {
+  return (
+    <Tool defaultOpen={true} className="bg-muted/100 border-black-200 border-1 rounded-xl mb-0">
+      <ToolHeader title={title} />
+      <ToolContent>
+        <ToolInput
+          input={code}
+          languages={programmingLanguages.find(
+            (lang) => lang.name.toLowerCase() === language.toLowerCase()
+          )}
+        />
+        <ToolOutput output={codeExplanation} errorText={errorText} />
+      </ToolContent>
+      {outputs && outputs.length > 0 && <ToolOutputItems items={outputs} />}
+    </Tool>
+  );
 }
 
 export default ExpandedCodeBlock;

@@ -1,2 +1,196 @@
+import { type UIMessage } from "ai";
+
 export const ALLOWED_EXTENSIONS = [".csv", ".xlsx", ".json", ".txt", ".md", ".pdf"];
 export const ACCEPT_STRING = ALLOWED_EXTENSIONS.join(",");
+
+export interface ChatHistoryItem {
+  id: string;
+  title: string;
+  url: string;
+  messages: UIMessage[];
+  isCustom?: boolean;
+}
+
+const chatHistory1 = [
+  {
+    id: "1",
+    role: "user",
+    content: "Calculate the mean fare paid by the passengers.",
+  },
+  {
+    id: "2",
+    role: "assistant",
+    function_call: {
+      name: "execute_code",
+      content: `
+# Importing necessary libraries
+import pandas as pd
+
+# Load the dataset
+file_path = './input/test_ave.csv'
+data = pd.read_csv(file_path)
+
+# Display the first few rows of the dataset to understand its structure
+data.head()`,
+    },
+  },
+  {
+    id: "3",
+    role: "assistant",
+    function_call: {
+      name: "execute_code",
+      content: `
+# Calculate the mean fare paid by the passengers
+mean_fare = data['Fare'].mean()  # Using the correct column name
+mean_fare_rounded = round(mean_fare, 2)
+
+mean_fare_rounded`,
+    },
+  },
+  {
+    id: "4",
+    role: "function",
+    name: "run_code",
+    belongsTo: "2",
+    output: `{
+  "[table]-2d0c2b2b": {
+    "columns": [
+      "PassengerId",
+      "Survived",
+      "Pclass",
+      "Name",
+      "Sex",
+      "Age",
+      "SibSp",
+      "Parch",
+      "Ticket",
+      "Fare",
+      "Cabin",
+      "Embarked",
+      "AgeBand"
+    ],
+    "data": [
+      ["1", "0", "3", "Braund, Mr. Owen Harris", "male", "22.0", "1", "0", "A/5 21171", "7.25", "NaN", "S", "2"],
+      ["2", "1", "1", "Cumings, Mrs. John Bradley (Florence Briggs Thayer)", "female", "38.0", "1", "0", "PC 17599", "71.2833", "C85", "C", "3"],
+      ["3", "1", "3", "Heikkinen, Miss. Laina", "female", "26.0", "0", "0", "STON/O2. 3101282", "7.925", "NaN", "S", "2"],
+      ["4", "1", "1", "Futrelle, Mrs. Jacques Heath (Lily May Peel)", "female", "35.0", "1", "0", "113803", "53.1", "C123", "S", "3"],
+      ["5", "0", "3", "Allen, Mr. William Henry", "male", "35.0", "0", "0", "373450", "8.05", "NaN", "S", "3"]
+    ]
+  }
+}`,
+  },
+  {
+    id: "5",
+    role: "function",
+    name: "run_code",
+    belongsTo: "3",
+    output: `{ "[text]-2573c8b1": "34.65" }`,
+  },
+  {
+    id: "6",
+    role: "assistant",
+    content: `
+# Summary of the Analysis
+The task was to calculate the mean fare paid by passengers using the dataset \`test_ave.csv\`. The following steps were taken to achieve this:
+
+1. **Data Loading**: The dataset was successfully loaded into a pandas DataFrame.
+2. **Mean Calculation**: The mean fare was calculated using the 'Fare' column from the dataset.
+3. **Rounding**: The result was rounded to two decimal places.
+
+## Result
+The mean fare paid by the passengers is **34.65**.
+
+If you have any further questions or need additional analysis, feel free to ask!
+`,
+  },
+];
+
+export const CHAT_SESSIONS: ChatHistoryItem[] = [
+  {
+    id: "1",
+    title: "Chat 1",
+    url: "/05f60180-6d3c-4590-b659-81b4592f71ec",
+    messages: [
+      {
+        id: "1",
+        role: "user",
+        parts: [
+          {
+            type: "text",
+            text: "This is history of Chats Page 1.",
+          },
+        ],
+      },
+      {
+        id: "2",
+        role: "assistant",
+        parts: [
+          {
+            type: "text",
+            text: `
+## Rules of Hooks
+1. Only call hooks at the **top level** (not inside loops, conditions, or nested functions)
+2. Only call hooks from **React functions** (components or custom hooks)
+\nWould you like to explore more advanced hooks like \`useCallback\` or \`useMemo\`?
+\nReact hooks are special functions that let you use React features in function components. The most common ones are:
+- **useState** - for managing component state
+- **useEffect** - for side effects like data fetching
+- **useContext** - for consuming context values
+- **useRef** - for accessing DOM elements
+        `,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "2",
+    title: "Chat 2",
+    url: "/c952df0b-75be-4b1f-b094-00902ac744d3",
+    messages: [
+      {
+        id: "1",
+        role: "user",
+        parts: [
+          {
+            type: "text",
+            text: "This is history of Chats Page 2.",
+          },
+        ],
+      },
+      {
+        id: "2",
+        role: "assistant",
+        parts: [
+          {
+            type: "text",
+            text: `
+This is example codes.\n\n
+\`\`\`python
+# Load labelled.csv and do an initial inspection
+import pandas as pd
+from tqdm import tqdm
+
+labelled_df = pd.read_csv('labelled.csv', encoding='ascii')
+print(labelled_df.head())
+print(labelled_df.describe(include='all'))
+\`\`\`
+Simple Table:
+| Header 1 | Header 2 | Header 3 | Header 3 |
+|---|---|---|---|
+| Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 | Row 1, Col 4 |
+| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 |
+`,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "3",
+    title: "Page 3 (Custom)",
+    url: "/custom-demo",
+    messages: [], // We won't use these
+    isCustom: true,
+  },
+];
