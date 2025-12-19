@@ -191,8 +191,7 @@ function FilesPage() {
   const handleChatWithFiles = () => {
     const selectedIds = Object.keys(selected).filter((id) => selected[id]);
     const selectedFiles = files.filter((f) => selectedIds.includes(f.id));
-
-    // Navigate with file data stored in router state
+    console.log("selectedFiles", selectedFiles);
     navigate("/", {
       state: {
         mode: "chat-with-files",

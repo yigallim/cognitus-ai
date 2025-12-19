@@ -144,7 +144,7 @@ export function PromptInputProvider({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const openRef = useRef<() => void>(() => {});
 
-  const add = useCallback((files: File[] | FileList) => {
+  const add = useCallback((files: (File | any)[] | FileList) => {
     const incoming = Array.from(files);
     if (incoming.length === 0) {
       return;
@@ -152,13 +152,16 @@ export function PromptInputProvider({
 
     setAttachmentFiles((prev) =>
       prev.concat(
-        incoming.map((file) => ({
-          id: nanoid(),
-          type: "file" as const,
-          url: URL.createObjectURL(file),
-          mediaType: file.type,
-          filename: file.name,
-        }))
+        incoming.map((file) => {
+          const isBlob = file instanceof Blob;
+          return {
+            id: file.id || nanoid(),
+            type: "file" as const,
+            url: isBlob ? URL.createObjectURL(file) : file.url || `/api/files/download/${file.id}`,
+            mediaType: isBlob ? file.type : file.content_type || file.mediaType,
+            filename: isBlob ? (file as File).name : file.filename || file.name,
+          };
+        })
       )
     );
   }, []);
