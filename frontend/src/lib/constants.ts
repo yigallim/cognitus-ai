@@ -1,17 +1,85 @@
-import { type UIMessage } from "ai";
-
 export const ALLOWED_EXTENSIONS = [".csv", ".xlsx", ".json", ".txt", ".md", ".pdf"];
 export const ACCEPT_STRING = ALLOWED_EXTENSIONS.join(",");
+
+interface UserMessage {
+  id: string;
+  role: "user";
+  content: string;
+}
+
+interface AssistantMessage {
+  id: string;
+  role: "assistant";
+  content?: string;
+  function_call?: {
+    name: string;
+    content: string;
+  };
+}
+
+interface FunctionMessage {
+  id: string;
+  role: "function";
+  name: string;
+  belongsTo: string;
+  output: string;
+}
+
+export type ChatMessage = UserMessage | AssistantMessage | FunctionMessage;
 
 export interface ChatHistoryItem {
   id: string;
   title: string;
   url: string;
-  messages: UIMessage[];
-  isCustom?: boolean;
+  messages: ChatMessage[];
 }
+const chatHistory1: ChatMessage[] = [
+  {
+    id: "1",
+    role: "user",
+    content: "This is history of Chats Page 1.",
+  },
+  {
+    id: "2",
+    role: "assistant",
+    content: `## Rules of Hooks
+1. Only call hooks at the **top level** (not inside loops, conditions, or nested functions)
+2. Only call hooks from **React functions** (components or custom hooks)
+\nWould you like to explore more advanced hooks like \`useCallback\` or \`useMemo\`?
+\nReact hooks are special functions that let you use React features in function components. The most common ones are:
+- **useState** - for managing component state
+- **useEffect** - for side effects like data fetching
+- **useContext** - for consuming context values
+- **useRef** - for accessing DOM element`,
+  },
+];
+const chatHistory2: ChatMessage[] = [
+  {
+    id: "1",
+    role: "user",
+    content: "This is history of Chats Page 2.",
+  },
+  {
+    id: "2",
+    role: "assistant",
+    content: `This is example codes.\n\n
+\`\`\`python
+# Load labelled.csv and do an initial inspection
+import pandas as pd
+from tqdm import tqdm
 
-const chatHistory1 = [
+labelled_df = pd.read_csv('labelled.csv', encoding='ascii')
+print(labelled_df.head())
+print(labelled_df.describe(include='all'))
+\`\`\`
+Simple Table:
+| Header 1 | Header 2 | Header 3 | Header 3 |
+|---|---|---|---|
+| Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 | Row 1, Col 4 |
+| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 |`,
+  },
+];
+const chatHistory3: ChatMessage[] = [
   {
     id: "1",
     role: "user",
@@ -22,8 +90,7 @@ const chatHistory1 = [
     role: "assistant",
     function_call: {
       name: "execute_code",
-      content: `
-# Importing necessary libraries
+      content: `# Importing necessary libraries
 import pandas as pd
 
 # Load the dataset
@@ -39,8 +106,7 @@ data.head()`,
     role: "assistant",
     function_call: {
       name: "execute_code",
-      content: `
-# Calculate the mean fare paid by the passengers
+      content: `# Calculate the mean fare paid by the passengers
 mean_fare = data['Fare'].mean()  # Using the correct column name
 mean_fare_rounded = round(mean_fare, 2)
 
@@ -110,87 +176,18 @@ export const CHAT_SESSIONS: ChatHistoryItem[] = [
     id: "1",
     title: "Chat 1",
     url: "/05f60180-6d3c-4590-b659-81b4592f71ec",
-    messages: [
-      {
-        id: "1",
-        role: "user",
-        parts: [
-          {
-            type: "text",
-            text: "This is history of Chats Page 1.",
-          },
-        ],
-      },
-      {
-        id: "2",
-        role: "assistant",
-        parts: [
-          {
-            type: "text",
-            text: `
-## Rules of Hooks
-1. Only call hooks at the **top level** (not inside loops, conditions, or nested functions)
-2. Only call hooks from **React functions** (components or custom hooks)
-\nWould you like to explore more advanced hooks like \`useCallback\` or \`useMemo\`?
-\nReact hooks are special functions that let you use React features in function components. The most common ones are:
-- **useState** - for managing component state
-- **useEffect** - for side effects like data fetching
-- **useContext** - for consuming context values
-- **useRef** - for accessing DOM elements
-        `,
-          },
-        ],
-      },
-    ],
+    messages: chatHistory1,
   },
   {
     id: "2",
     title: "Chat 2",
     url: "/c952df0b-75be-4b1f-b094-00902ac744d3",
-    messages: [
-      {
-        id: "1",
-        role: "user",
-        parts: [
-          {
-            type: "text",
-            text: "This is history of Chats Page 2.",
-          },
-        ],
-      },
-      {
-        id: "2",
-        role: "assistant",
-        parts: [
-          {
-            type: "text",
-            text: `
-This is example codes.\n\n
-\`\`\`python
-# Load labelled.csv and do an initial inspection
-import pandas as pd
-from tqdm import tqdm
-
-labelled_df = pd.read_csv('labelled.csv', encoding='ascii')
-print(labelled_df.head())
-print(labelled_df.describe(include='all'))
-\`\`\`
-Simple Table:
-| Header 1 | Header 2 | Header 3 | Header 3 |
-|---|---|---|---|
-| Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 | Row 1, Col 4 |
-| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 |
-`,
-          },
-        ],
-      },
-    ],
+    messages: chatHistory2,
   },
   {
     id: "3",
-    title: "Page 3 (Custom)",
-    url: "/custom-demo",
-    messages: [], // We won't use these
-    isCustom: true,
+    title: "Chat 3",
+    url: "/3d960391-be5b-45e1-a674-834db7c67518",
+    messages: chatHistory3,
   },
 ];

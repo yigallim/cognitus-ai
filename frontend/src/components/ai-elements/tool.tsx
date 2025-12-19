@@ -151,7 +151,7 @@ export const ToolOutput = ({ className, output, errorText, ...props }: ToolOutpu
   }
 
   return (
-    <div className={cn("space-y-2 px-4 py-1", className)} {...props}>
+    <div className={cn("space-y-2 px-4 pt-1.5 pb-4", className)} {...props}>
       <h4 className="font-medium text-sm tracking-wide mb-0">
         {errorText ? "Error" : "Code Explanation"}
       </h4>
@@ -170,7 +170,7 @@ export const ToolOutput = ({ className, output, errorText, ...props }: ToolOutpu
 
 export const ToolOutputItems = ({ items }: { items: CodeOutput[] }) => {
   return (
-    <div className="flex flex-wrap gap-3 px-4 py-4">
+    <div className="flex flex-wrap gap-3 px-4 pb-4">
       {items.map((item, index) => (
         <ToolOutputItem key={index} item={item} />
       ))}

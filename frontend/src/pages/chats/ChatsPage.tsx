@@ -2,17 +2,23 @@
 
 import { useLocation } from "react-router";
 import { useChat } from "@ai-sdk/react";
-import { type UIMessage } from "ai";
 import { Conversation } from "@/components/ai-elements/conversation";
 import { PromptInputProvider } from "@/components/ai-elements/prompt-input";
 import { useEffect, useState } from "react";
 import ChatMessages from "./ChatMessages";
 import ChatInput from "./ChatInput";
+import type { ChatMessage } from "@/lib/constants";
 
-function ChatsPage({ chatId, initialMessages }: { chatId: string; initialMessages: UIMessage[] }) {
+function ChatsPage({
+  chatId,
+  initialMessages,
+}: {
+  chatId: string;
+  initialMessages: ChatMessage[];
+}) {
   // status: pending to be used for the streaming
   // sendMessage: function to send message (api call)
-  const { messages, setMessages, status, sendMessage } = useChat({
+  const { messages, setMessages, status, sendMessage } = useChat<ChatMessage & any>({
     // messages: initialMessages,
     // transport: new DefaultChatTransport({
     //   api: '/api/ai/chat'
@@ -22,8 +28,6 @@ function ChatsPage({ chatId, initialMessages }: { chatId: string; initialMessage
   useEffect(() => {
     setMessages(initialMessages);
   }, [initialMessages]);
-
-  // handle the files sent from FilesPage
   const location = useLocation();
   const [fileState] = useState(() => location.state?.files ?? []);
 

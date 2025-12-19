@@ -12,9 +12,10 @@ import {
 import type { UIMessage } from "ai";
 import { useEffect } from "react";
 import { useStickToBottomContext } from "use-stick-to-bottom";
-import ExpandedCodeBlock from "./ExpandedCodeBlock";
+import ExpandedCodeBlock, { type CodeOutput } from "./ExpandedCodeBlock";
+import type { ChatMessage } from "@/lib/constants";
 
-function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: UIMessage[] }) {
+function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: ChatMessage[] }) {
   const { scrollToBottom } = useStickToBottomContext();
 
   useEffect(() => {
@@ -25,123 +26,80 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
     return () => clearTimeout(timer);
   }, [chatMessages]);
 
-  function handleText(text: string) {
-    const segments = [];
-    const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g; // Regex to match code blocks
+  const getOutputs = (id: string): CodeOutput[] => {
+    const outputMessage = chatMessages.find((m) => m.role === "function" && m.belongsTo === id);
 
-    let lastIndex = 0;
-    let match;
+    if (!outputMessage || outputMessage.role !== "function" || !outputMessage.output) return [];
 
-    while ((match = codeBlockRegex.exec(text)) !== null) {
-      const [full, lang, code] = match;
+    try {
+      const outputData = JSON.parse(outputMessage.output);
+      const outputs: CodeOutput[] = [];
 
-      // Add text before code block
-      if (match.index > lastIndex) {
-        segments.push({
-          type: "text",
-          language: "text",
-          content: text.slice(lastIndex, match.index),
-        });
-      }
-
-      // Add the code block
-      segments.push({
-        type: "code",
-        language: lang || "text",
-        content: code.trim(),
+      Object.keys(outputData).forEach((key) => {
+        if (key.startsWith("[table]")) {
+          outputs.push({ type: "table" });
+        } else if (key.startsWith("[text]")) {
+          outputs.push({ type: "text" });
+        } else if (key.startsWith("[image]")) {
+          outputs.push({ type: "image" });
+        }
       });
-
-      lastIndex = match.index + full.length;
+      return outputs;
+    } catch (e) {
+      console.error("Failed to parse output JSON", e);
+      return [];
     }
-
-    // Add any remaining text after the final code block
-    if (lastIndex < text.length) {
-      segments.push({
-        type: "text",
-        language: "text",
-        content: text.slice(lastIndex),
-      });
-    }
-
-    return segments;
-  }
-
-  // temp
-  const text = `This code snippet loads a CSV file named 'labelled.csv' and performs an initial inspection of its contents.
-- Import pandas and tqdm libraries
-- Read 'labelled.csv' into a DataFrame
-- Print the first few rows of the DataFrame
-- Print a descriptive summary of the DataFrame`;
+  };
 
   return (
     <>
       <ConversationContent>
-        {chatMessages.map((chatMessage, index) => (
-          <Message key={`${chatId}-${chatMessage.id || index}`} from={chatMessage.role}>
-            <div className="ml-auto flex w-fit flex-wrap gap-2 ">
-              {chatMessage.parts
-                ?.filter((p) => p.type === "file")
-                .map((filePart, idx) => (
-                  <MessageAttachments key={idx}>
-                    <MessageAttachment data={filePart} />
-                  </MessageAttachments>
-                ))}
-            </div>
-            <MessageContent>
-              {chatMessage.parts?.map((part, i) => {
-                switch (part.type) {
-                  case "text":
-                    const segments = handleText(part.text);
-                    return segments.map((segment, j) => {
-                      if (segment.type === "text") {
-                        return (
-                          <MessageResponse key={`${chatId}-${chatMessage.id}-${i}-${j}`}>
-                            {segment.content}
-                          </MessageResponse>
-                        );
-                      }
+        {chatMessages.map((chatMessage, index) => {
+          if (chatMessage.role === "function") return null;
 
-                      if (segment.type === "code") {
-                        return (
-                          <ExpandedCodeBlock
-                            key={`${chatId}-${chatMessage.id}-${i}-${j}`}
-                            title="Code"
-                            code={segment.content}
-                            language={segment.language}
-                            codeExplanation={text}
-                          />
-                        );
-                      }
-                    });
-                  default:
-                    return null;
-                }
-              })}
-            </MessageContent>
-          </Message>
-        ))}
-        <Message key={100} from="assistant">
-          <MessageContent>
-            <ExpandedCodeBlock
-              code={`# Importing necessary libraries
-import pandas as pd
+          const key = `${chatId}-${chatMessage.id || index}`;
 
-# Load the dataset
-file_path = './input/test_ave.csv'
-data = pd.read_csv(file_path)
+          if (
+            chatMessage.role === "assistant" &&
+            chatMessage.function_call &&
+            chatMessage.function_call.name === "execute_code"
+          ) {
+            const outputs = getOutputs(chatMessage.id);
+            const code = chatMessage.function_call.content;
 
-# Display the first few rows of the dataset to understand its structure
-data.head()`}
-              language="Python"
-              title="Code"
-              codeExplanation={`- Load the dataset from a CSV file
-- Display the first few rows of the dataset`}
-              outputs={[{ type: "table" }, { type: "image" }, { type: "text" }]}
-            />
-          </MessageContent>
-        </Message>
+            return (
+              <Message key={key} from="assistant">
+                <MessageContent>
+                  <ExpandedCodeBlock
+                    title="Code"
+                    language="python"
+                    code={code}
+                    codeExplanation="Executed code block"
+                    outputs={outputs}
+                  />
+                </MessageContent>
+              </Message>
+            );
+          }
+
+          return (
+            <Message key={key} from={chatMessage.role as UIMessage["role"]}>
+              {/* <div className="ml-auto flex w-fit flex-wrap gap-2">
+                {(chatMessage as any).parts
+                  ?.filter((p: any) => p.type === "file")
+                  .map((filePart: any, idx: number) => (
+                    <MessageAttachments key={idx}>
+                      <MessageAttachment data={filePart} />
+                    </MessageAttachments>
+                  ))}
+              </div> */}
+              <MessageContent>
+                {chatMessage.content && <MessageResponse>{chatMessage.content}</MessageResponse>}
+              </MessageContent>
+            </Message>
+          );
+        })}
       </ConversationContent>
-
       <ConversationScrollButton />
     </>
   );

@@ -6,7 +6,6 @@ import PublicRoute from "./routes/PublicRoute";
 import ProtectedRoute from "./routes/ProtectedRoutes";
 import LoginForm from "./pages/Login";
 import { CHAT_SESSIONS } from "./lib/constants";
-import Page3 from "./pages/chats/Page3";
 
 function AppRoutes() {
   return (
@@ -54,11 +53,7 @@ function AppRoutes() {
           path={session.url}
           element={
             <ProtectedRoute>
-              {session.isCustom ? (
-                <Page3 />
-              ) : (
-                <ChatsPage chatId={session.id} initialMessages={session.messages} />
-              )}
+              <ChatsPage chatId={session.id} initialMessages={session.messages} />
             </ProtectedRoute>
           }
         />

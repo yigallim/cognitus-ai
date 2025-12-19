@@ -37,7 +37,7 @@ function ExpandedCodeBlock({
   outputs,
 }: CodeBlockProps) {
   return (
-    <Tool defaultOpen={true} className="bg-muted/100 border-black-200 border-1 rounded-xl mb-0">
+    <Tool defaultOpen={true} className="bg-muted border-black-200 border rounded-xl mb-0">
       <ToolHeader title={title} />
       <ToolContent>
         <ToolInput

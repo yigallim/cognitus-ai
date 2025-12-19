@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { SendHorizontal } from "lucide-react";
-import type { UIMessage } from "ai";
+import type { ChatMessage } from "@/lib/constants";
 import {
   PromptInput,
   PromptInputActionAddAttachments,
@@ -17,8 +17,8 @@ import {
 } from "@/components/ai-elements/prompt-input";
 
 interface ChatInputProps {
-  chatMessages: UIMessage[];
-  setChatMessages: (newChatMessages: UIMessage[]) => void;
+  chatMessages: ChatMessage[];
+  setChatMessages: (newChatMessages: ChatMessage[]) => void;
   files?: File[];
 }
 
@@ -42,20 +42,12 @@ function ChatInput({ chatMessages, setChatMessages, files }: ChatInputProps) {
       return;
     }
 
-    const userParts: UIMessage["parts"] = [];
-    if (hasText) {
-      userParts.push({ type: "text", text: message.text });
-    }
-    if (hasAttachments) {
-      userParts.push(...message.files!);
-    }
-
-    const newChatMessages: UIMessage[] = [
+    const newChatMessages: ChatMessage[] = [
       ...chatMessages,
       {
         id: chatMessages.length.toString(),
         role: "user",
-        parts: userParts,
+        content: message.text,
       },
     ];
 
@@ -67,36 +59,12 @@ function ChatInput({ chatMessages, setChatMessages, files }: ChatInputProps) {
       {
         id: (chatMessages.length + 1).toString(),
         role: "assistant",
-        parts: [{ type: "text", text: response }],
+        content: response,
       },
       {
         id: (chatMessages.length + 2).toString(),
-        role: "user",
-        parts: [
-          {
-            type: "text",
-            text: `
-## Rules of Hooks
-1. Only call hooks at the **top level** (not inside loops, conditions, or nested functions)
-2. Only call hooks from **React functions** (components or custom hooks)
-\nWould you like to explore more advanced hooks like \`useCallback\` or \`useMemo\`?
-\nReact hooks are special functions that let you use React features in function components. The most common ones are:
-- **useState** - for managing component state
-- **useEffect** - for side effects like data fetching
-- **useContext** - for consuming context values
-- **useRef** - for accessing DOM elements
-        `,
-          },
-        ],
-      },
-      {
-        id: (chatMessages.length + 3).toString(),
         role: "assistant",
-        parts: [
-          {
-            type: "text",
-            text: `
-This is example codes.\n\n
+        content: `This is example codes.\n\n
 \`\`\`python
 # Load labelled.csv and do an initial inspection
 import pandas as pd
@@ -110,10 +78,7 @@ Simple Table:
 | Header 1 | Header 2 | Header 3 | Header 3 |
 |---|---|---|---|
 | Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 | Row 1, Col 4 |
-| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 |
-`,
-          },
-        ],
+| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 |`,
       },
     ]);
 
