@@ -9,7 +9,7 @@ import {
   MessageContent,
   MessageResponse,
 } from "@/components/ai-elements/message";
-import type { UIMessage } from "ai";
+import type { FileUIPart, UIMessage } from "ai";
 import { useEffect } from "react";
 import { useStickToBottomContext } from "use-stick-to-bottom";
 import ExpandedCodeBlock, { type CodeOutput } from "./ExpandedCodeBlock";
@@ -25,7 +25,7 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
 
     return () => clearTimeout(timer);
   }, [chatMessages]);
-
+  console.log("chatMessages", chatMessages);
   const getOutputs = (id: string): CodeOutput[] => {
     const outputMessage = chatMessages.find((m) => m.role === "function" && m.belongsTo === id);
 
@@ -57,7 +57,7 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
         {chatMessages.map((chatMessage, index) => {
           if (chatMessage.role === "function") return null;
 
-          const key = `${chatId}-${chatMessage.id || index}`;
+          const key = `${chatId}-${index}`;
 
           if (
             chatMessage.role === "assistant" &&
@@ -84,15 +84,13 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
 
           return (
             <Message key={key} from={chatMessage.role as UIMessage["role"]}>
-              {/* <div className="ml-auto flex w-fit flex-wrap gap-2">
-                {(chatMessage as any).parts
-                  ?.filter((p: any) => p.type === "file")
-                  .map((filePart: any, idx: number) => (
-                    <MessageAttachments key={idx}>
-                      <MessageAttachment data={filePart} />
-                    </MessageAttachments>
+              {chatMessage.attachments && chatMessage.attachments.length > 0 && (
+                <MessageAttachments className="mb-2">
+                  {chatMessage.attachments.map((attachment: FileUIPart, idx: number) => (
+                    <MessageAttachment key={`${key}-attachment-${idx}`} data={attachment as any} />
                   ))}
-              </div> */}
+                </MessageAttachments>
+              )}
               <MessageContent>
                 {chatMessage.content && <MessageResponse>{chatMessage.content}</MessageResponse>}
               </MessageContent>

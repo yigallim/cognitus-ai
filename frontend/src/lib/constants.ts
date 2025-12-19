@@ -1,3 +1,5 @@
+import type { FileUIPart } from "ai";
+
 export const ALLOWED_EXTENSIONS = [".csv", ".xlsx", ".json", ".txt", ".md", ".pdf"];
 export const ACCEPT_STRING = ALLOWED_EXTENSIONS.join(",");
 
@@ -5,6 +7,7 @@ interface UserMessage {
   id: string;
   role: "user";
   content: string;
+  attachments?: FileUIPart[];
 }
 
 interface AssistantMessage {
@@ -15,6 +18,7 @@ interface AssistantMessage {
     name: string;
     content: string;
   };
+  attachments?: FileUIPart[];
 }
 
 interface FunctionMessage {

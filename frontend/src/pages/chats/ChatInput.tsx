@@ -48,23 +48,17 @@ function ChatInput({ chatMessages, setChatMessages, files }: ChatInputProps) {
         id: chatMessages.length.toString(),
         role: "user",
         content: message.text,
+        attachments: message.files,
       },
     ];
 
-    setChatMessages(newChatMessages);
-
-    const response = "Response to: " + message.text;
     setChatMessages([
       ...newChatMessages,
       {
         id: (chatMessages.length + 1).toString(),
         role: "assistant",
-        content: response,
-      },
-      {
-        id: (chatMessages.length + 2).toString(),
-        role: "assistant",
-        content: `This is example codes.\n\n
+        content: `Response to: " + ${message.text}\n
+This is example codes.\n\n
 \`\`\`python
 # Load labelled.csv and do an initial inspection
 import pandas as pd
