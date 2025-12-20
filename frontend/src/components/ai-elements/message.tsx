@@ -260,6 +260,16 @@ export const MessageBranchPage = ({ className, ...props }: MessageBranchPageProp
 
 export type MessageResponseProps = ComponentProps<typeof Streamdown>;
 
+const customComponents = {
+  table: ({ node, className, children, ...props }: any) => (
+    <div className="border-blue-500 border">
+      <table className="w-full caption-bottom text-sm" {...props}>
+        {children}
+      </table>
+    </div>
+  ),
+};
+
 export const MessageResponse = memo(
   ({ className, ...props }: MessageResponseProps) => (
     <Streamdown
@@ -271,6 +281,7 @@ export const MessageResponse = memo(
         "[&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
         className
       )}
+      components={customComponents}
       {...props}
     />
   ),

@@ -97,6 +97,16 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
             </Message>
           );
         })}
+        <Message from="assistant">
+          <MessageContent>
+            <MessageResponse>
+              {`| Header 1 | Header 2 | Header 3 | Header 3 |
+|---|---|---|---|
+| Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 | Row 1, Col 4 |
+| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 |`}
+            </MessageResponse>
+          </MessageContent>
+        </Message>
       </ConversationContent>
       <ConversationScrollButton />
     </>
