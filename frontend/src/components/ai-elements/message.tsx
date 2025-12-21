@@ -9,6 +9,8 @@ import { ChevronLeftIcon, ChevronRightIcon, PaperclipIcon, XIcon } from "lucide-
 import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
 import { createContext, memo, useContext, useEffect, useState } from "react";
 import { Streamdown } from "streamdown";
+import { TableCopyDropdown } from "../table-function/copy-dropdown";
+import { TableDownloadDropdown } from "../table-function/download-dropdown";
 
 export type MessageProps = HTMLAttributes<HTMLDivElement> & {
   from: UIMessage["role"];
@@ -17,7 +19,7 @@ export type MessageProps = HTMLAttributes<HTMLDivElement> & {
 export const Message = ({ className, from, ...props }: MessageProps) => (
   <div
     className={cn(
-      "group flex w-full max-w-[80%] flex-col gap-2",
+      "group flex w-full max-w-[80%] flex-col gap-2 min-w-0 overflow-hidden",
       from === "user" ? "is-user ml-auto justify-end" : "is-assistant",
       className
     )}
@@ -30,7 +32,7 @@ export type MessageContentProps = HTMLAttributes<HTMLDivElement>;
 export const MessageContent = ({ children, className, ...props }: MessageContentProps) => (
   <div
     className={cn(
-      "is-user:dark flex flex-col gap-2 overflow-hidden text-sm is-user:bg-blue-100",
+      "is-user:dark flex flex-col gap-2 overflow-hidden text-sm is-user:bg-blue-100 min-w-0 max-w-full",
       "group-[.is-user]:ml-auto group-[.is-user]:rounded-lg group-[.is-user]:bg-blue-50 group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground",
       "group-[.is-assistant]:text-foreground",
       className
@@ -261,23 +263,169 @@ export const MessageBranchPage = ({ className, ...props }: MessageBranchPageProp
 export type MessageResponseProps = ComponentProps<typeof Streamdown>;
 
 const customComponents = {
-  table: ({ node, className, children, ...props }: any) => (
-    <div className="border-blue-500 border">
-      <table className="w-full caption-bottom text-sm" {...props}>
-        {children}
-      </table>
-    </div>
+  ul: ({ children, ...props }: any) => (
+    <ul className="list-disc pl-6" {...props}>
+      {children}
+    </ul>
   ),
+  ol: ({ children, ...props }: any) => (
+    <ol className="list-decimal pl-6" {...props}>
+      {children}
+    </ol>
+  ),
+  li: ({ children, ...props }: any) => (
+    <li className="my-1 pl-2" {...props}>
+      {children}
+    </li>
+  ),
+  // temp: will be moved to single file
+  table: ({ node, className, children, ...props }: any) => {
+    const tableNode = node;
+    const rows: string[][] = [];
+    const cols: string[] = [];
+
+    // Parse table structure
+    if (tableNode && tableNode.children) {
+      const thead = tableNode.children.find((child: any) => child.tagName === 'thead');
+      const tbody = tableNode.children.find((child: any) => child.tagName === 'tbody');
+
+      if (thead && thead.children && thead.children[0]) {
+        const headerRow = thead.children[0];
+        if (headerRow.children) {
+          headerRow.children.forEach((th: any) => {
+            const text = extractText(th);
+            cols.push(text);
+          });
+        }
+      }
+
+      if (tbody && tbody.children) {
+        tbody.children.forEach((tr: any) => {
+          const rowData: string[] = [];
+          if (tr.children) {
+            tr.children.forEach((td: any) => {
+              const text = extractText(td);
+              rowData.push(text);
+            });
+          }
+          rows.push(rowData);
+        });
+      }
+    }
+
+    function extractText(node: any): string {
+      if (!node) return '';
+      if (node.type === 'text') return node.value || '';
+      if (node.value) return node.value;
+      if (node.children) {
+        return node.children.map(extractText).join('');
+      }
+      return '';
+    }
+
+    return (
+      <div className="border border-border rounded-xl w-full my-4 overflow-hidden" data-streamdown="table-wrapper">
+        {/* Header with row/col count and action buttons */}
+        <div className="flex flex-row justify-between items-center px-3 h-10 bg-gray-100 dark:bg-neutral-900 border-b border-border shrink-0">
+          <span className="text-xs font-medium text-muted-foreground tracking-tight whitespace-nowrap">
+            {cols.length} cols, {rows.length} rows returned
+          </span>
+
+          <div className="flex items-center gap-1">
+            <TableDownloadDropdown 
+              onDownload={(format) => {
+                console.log(`Table downloaded as ${format}`);
+              }}
+              onError={(error) => {
+                console.error('Download failed:', error);
+              }}
+            />
+            <TableCopyDropdown
+              onCopy={(format) => {
+                console.log(`Table copied as ${format}`);
+              }}
+              onError={(error) => {
+                console.error('Copy failed:', error);
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Scrollable table container */}
+        <div
+          className="overflow-auto max-h-[500px] bg-white dark:bg-neutral-950"
+          style={{ scrollbarWidth: "thin" }}
+        >
+          <table className="border-collapse text-sm w-auto min-w-full">
+            <thead className="sticky top-0 z-30 bg-gray-100 dark:bg-neutral-900">
+              <tr>
+                {/* Corner cell for row numbers */}
+                <th className="sticky left-0 z-40 bg-gray-100 dark:bg-neutral-900 p-2 border-b-2 border-r-2 border-border min-w-8"></th>
+
+                {/* Column headers */}
+                {cols.map((col, idx) => (
+                  <th
+                    key={idx}
+                    className="p-2 bg-gray-100 dark:bg-neutral-900 font-medium border-b-2 border-r-2 last:border-r-0 border-border group relative z-20"
+                    style={{ minWidth: '150px', maxWidth: '400px' }}
+                  >
+                    <div className="flex items-center justify-center">
+                      <span
+                        className="text-xs break-words hyphens-auto"
+                        style={{ wordBreak: 'break-word' }}
+                        title={col}
+                      >
+                        {col}
+                      </span>
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody>
+              {rows.map((row, rIdx) => (
+                <tr
+                  key={rIdx}
+                  className="hover:bg-gray-50 dark:hover:bg-neutral-900/50"
+                >
+                  {/* Row number cell - sticky on left */}
+                  <td className="sticky left-0 z-10 bg-gray-100 dark:bg-neutral-900 p-2 text-xs border-b border-r-2 border-border group align-center min-w-8">
+                    <div className="flex items-center justify-center">
+                      <span className="text-muted-foreground">{rIdx + 1}</span>
+                    </div>
+                  </td>
+
+                  {/* Data cells with text wrapping */}
+                  {row.map((cell, cIdx) => (
+                    <td
+                      key={cIdx}
+                      className="p-2 text-xs border-b border-r last:border-r-0 border-border bg-white dark:bg-neutral-950 align-top relative z-0"
+                      style={{ minWidth: '150px', maxWidth: '400px' }}
+                    >
+                      <div
+                        className="break-words hyphens-auto leading-relaxed"
+                        style={{ wordBreak: 'break-word' }}
+                      >
+                        {cell ?? ""}
+                      </div>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
 };
 
 export const MessageResponse = memo(
   ({ className, ...props }: MessageResponseProps) => (
     <Streamdown
       className={cn(
-        "size-full prose prose-sm dark:prose-invert",
-        "[&_ul]:pl-4 [&_ol]:pl-4",
-        "[&_li]:mt-0 [&_li]:mb-0",
-        "[&_p]:mt-0 [&_p]:mb-0",
+        "size-full max-w-full overflow-hidden",
         "[&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
         className
       )}

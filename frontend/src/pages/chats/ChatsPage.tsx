@@ -32,7 +32,7 @@ function ChatsPage({
   const [fileState] = useState(() => location.state?.files ?? []);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-hidden">
       {messages.length > 0 ? (
         <>
           <Conversation>

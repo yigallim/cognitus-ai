@@ -139,7 +139,7 @@ function AppLayout({ children }: { children: ReactNode }) {
             </div>
           </header>
 
-          <main className="flex-1 p-4 overflow-hidden">{children}</main>
+          <main className="flex-1 p-4 overflow-hidden min-h-0 min-w-0">{children}</main>
         </SidebarInset>
       </div>
     </SidebarProvider>
