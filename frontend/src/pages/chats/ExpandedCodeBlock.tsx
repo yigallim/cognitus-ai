@@ -7,6 +7,7 @@ import {
   ToolOutputItems,
 } from "@/components/ai-elements/tool.tsx";
 import pythonLogo from "../../assets/pythonicon.webp";
+import type { TableData } from "../../components/Table.tsx";
 
 const programmingLanguages = [
   { name: "Python", logo: pythonLogo },
@@ -16,7 +17,7 @@ const programmingLanguages = [
 export interface CodeOutput {
   type: "table" | "text" | "image" | "chart";
   title?: string;
-  content?: string;
+  content?: string | TableData;
 }
 
 type CodeBlockProps = {

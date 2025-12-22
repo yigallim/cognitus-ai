@@ -21,6 +21,9 @@ import { isValidElement } from "react";
 import { CodeBlock, CodeBlockCopyButton } from "./code-block";
 import type { BundledLanguage } from "shiki";
 import type { CodeOutput } from "@/pages/chats/ExpandedCodeBlock";
+import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
+import type { OutputTabProps } from "../OutputTab";
+import OutputTab from "../OutputTab";
 
 export type ToolProps = ComponentProps<typeof Collapsible>;
 
@@ -172,39 +175,51 @@ export const ToolOutputItems = ({ items }: { items: CodeOutput[] }) => {
   return (
     <div className="flex flex-wrap gap-3 px-4 pb-4">
       {items.map((item, index) => (
-        <ToolOutputItem key={index} item={item} />
+        <ToolOutputItem key={index} item={item} allOutputItems={items} />
       ))}
     </div>
   );
 };
 
-const ToolOutputItem = ({ item }: { item: CodeOutput }) => {
-  const Icon =
-    {
-      table: Table,
-      text: FileText,
-      chart: LineChart,
-      image: ImageIcon,
-    }[item.type] || FileText;
+export const getOutputBoxItem = ({item}: {item: CodeOutput}) => {
+  const icon =
+      {
+        table: Table,
+        text: FileText,
+        chart: LineChart,
+        image: ImageIcon,
+      }[item.type] || FileText;
 
-  const titleMapping: Record<CodeOutput["type"], string> = {
-    table: "Table",
-    text: "Text",
-    chart: "Chart",
-    image: "Image",
-  };
+    const titleMapping: Record<CodeOutput["type"], string> = {
+      table: "Table",
+      text: "Text",
+      chart: "Chart",
+      image: "Image",
+    };
 
-  const title = item.title || titleMapping[item.type];
+    const title = item.title || titleMapping[item.type];
 
+    return { icon, title };
+}
+
+const ToolOutputItem = ({ item, allOutputItems }: OutputTabProps) => {
+  const { icon: Icon, title } = getOutputBoxItem({item});
   return (
-    <div className="flex border rounded-xl overflow-hidden cursor-pointer hover:bg-muted/50 transition-colors w-fit min-w-[160px] bg-white group transition-all duration-200 active:scale-95">
-      <div className="bg-muted px-4 py-4 flex items-center justify-center border-r group-hover:bg-muted/80">
-        <Icon className="size-6 text-muted-foreground" />
-      </div>
-      <div className="px-3 py-2 flex flex-col justify-center">
-        <span className="text-sm font-semibold text-gray-800">{title}</span>
-        <span className="text-[11px] text-gray-400 font-medium">Click to view</span>
-      </div>
-    </div>
+    <Sheet>
+      <SheetTrigger asChild>
+        <div className="flex border rounded-xl overflow-hidden cursor-pointer hover:bg-muted/50 transition-colors w-fit min-w-[160px] bg-white group transition-all duration-200 active:scale-95">
+          <div className="bg-muted px-4 py-4 flex items-center justify-center border-r group-hover:bg-muted/80">
+            <Icon className="size-6 text-muted-foreground" />
+          </div>
+          <div className="px-3 py-2 flex flex-col justify-center">
+            <span className="text-sm font-semibold text-gray-800">{title}</span>
+            <span className="text-[11px] text-gray-400 font-medium">Click to view</span>
+          </div>
+        </div>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-full sm:max-w-4xl">
+        <OutputTab item={item} allOutputItems={allOutputItems} />
+      </SheetContent>
+    </Sheet>
   );
 };

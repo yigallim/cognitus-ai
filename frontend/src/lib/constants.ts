@@ -154,7 +154,7 @@ mean_fare_rounded`,
     role: "function",
     name: "run_code",
     belongsTo: "3",
-    output: `{ "[text]-2573c8b1": "34.65", "[table]-2573c8b1": "34.65", "[image]-2573c8b1": "34.65" }`,
+    output: `{ "[text]-2573c8b1": "34.65", "[table]-2573c8b1": "34.65", "[image]-2573c8b1": "https://i.postimg.cc/Mp3ZXpdm/image.png" }`,
   },
   {
     id: "6",

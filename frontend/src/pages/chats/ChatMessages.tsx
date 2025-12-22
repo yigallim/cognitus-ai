@@ -4,6 +4,8 @@ import {
 } from "@/components/ai-elements/conversation";
 import {
   Message,
+  MessageAction,
+  MessageActions,
   MessageAttachment,
   MessageAttachments,
   MessageContent,
@@ -14,6 +16,7 @@ import { useEffect } from "react";
 import { useStickToBottomContext } from "use-stick-to-bottom";
 import ExpandedCodeBlock, { type CodeOutput } from "./ExpandedCodeBlock";
 import type { ChatMessage } from "@/lib/constants";
+import { CopyIcon } from "lucide-react";
 
 function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: ChatMessage[] }) {
   const { scrollToBottom } = useStickToBottomContext();
@@ -37,11 +40,11 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
 
       Object.keys(outputData).forEach((key) => {
         if (key.startsWith("[table]")) {
-          outputs.push({ type: "table" });
+          outputs.push({ type: "table", content: outputData[key] });
         } else if (key.startsWith("[text]")) {
-          outputs.push({ type: "text" });
+          outputs.push({ type: "text", content: outputData[key] });
         } else if (key.startsWith("[image]")) {
-          outputs.push({ type: "image" });
+          outputs.push({ type: "image", content: outputData[key] });
         }
       });
       return outputs;
@@ -56,6 +59,9 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
       <ConversationContent>
         {chatMessages.map((chatMessage, index) => {
           if (chatMessage.role === "function") return null;
+
+          // check whether is the last message
+          
 
           const key = `${chatId}-${index}`;
 
@@ -94,6 +100,11 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
               <MessageContent>
                 {chatMessage.content && <MessageResponse>{chatMessage.content}</MessageResponse>}
               </MessageContent>
+              {/* <MessageActions>
+                <MessageAction label="Copy" tooltip="Copy to clipboard" onClick={() => navigator.clipboard.writeText(chatMessage.content || "")}>
+                  <CopyIcon className="size-4" />
+                </MessageAction>
+              </MessageActions> */}
             </Message>
           );
         })}
