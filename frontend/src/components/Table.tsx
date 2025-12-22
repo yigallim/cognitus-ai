@@ -45,7 +45,7 @@ export function DataTable({ table, longTable = false }: DataTableProps) {
 
             {/* Scrollable table container */}
             <div
-                className={`overflow-auto ${longTable ? "max-h-full" : "max-h-[500px]"} bg-white dark:bg-neutral-950`}
+                className={`overflow-auto ${longTable ? "max-h-[calc(100vh-10rem)]" : "max-h-[500px]"} bg-white dark:bg-neutral-950`}
                 style={{ scrollbarWidth: "thin" }}
             >
                 <table className="border-collapse text-sm w-auto min-w-full">

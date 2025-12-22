@@ -10,6 +10,7 @@ import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
 import { createContext, memo, useContext, useEffect, useState } from "react";
 import { Streamdown } from "streamdown";
 import { DataTable } from "../Table";
+import ImageOutput from "../ImageOutput";
 
 export type MessageProps = HTMLAttributes<HTMLDivElement> & {
   from: UIMessage["role"];
@@ -325,6 +326,14 @@ const customComponents = {
       <DataTable table={ { columns: cols, data: rows } } className={className} {...props}>
         {children}
       </DataTable>
+    );
+  },
+  img: ({ node, className, ...props }: any) => {
+    const alt = node.properties?.alt || 'Image';
+    const src = node.properties?.src || '';
+
+    return (
+      <ImageOutput currentItem={ { type: 'image', content: src, title: alt } } className={className} {...props} />
     );
   }
 };

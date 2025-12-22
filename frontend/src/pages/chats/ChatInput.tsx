@@ -80,7 +80,7 @@ Simple Table:
   }
 
   return (
-    <div className="p-2">
+    <div>
       <PromptInput onSubmit={sendMessage} globalDrop multiple className="bg-muted rounded-2xl">
         <PromptInputHeader>
           <PromptInputAttachments>
