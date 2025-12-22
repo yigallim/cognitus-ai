@@ -16,10 +16,9 @@ function ChatsPage({
   chatId: string;
   initialMessages: ChatMessage[];
 }) {
-  // status: pending to be used for the streaming
+  // status: streaming
   // sendMessage: function to send message (api call)
   const { messages, setMessages, status, sendMessage } = useChat<ChatMessage & any>({
-    // messages: initialMessages,
     // transport: new DefaultChatTransport({
     //   api: '/api/ai/chat'
     // }),
@@ -28,6 +27,7 @@ function ChatsPage({
   useEffect(() => {
     setMessages(initialMessages);
   }, [initialMessages]);
+  
   const location = useLocation();
   const [fileState] = useState(() => location.state?.files ?? []);
 

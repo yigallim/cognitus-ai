@@ -11,32 +11,6 @@ interface DataTableProps {
     longTable?: boolean;
 }
 
-const test = {
-    columns: [
-        "PassengerId",
-        "Survived",
-        "Pclass",
-        "Name",
-        "Sex",
-        "Age",
-        "SibSp",
-        "Parch",
-        "Ticket",
-        "Fare",
-        "Cabin",
-        "Embarked",
-        "AgeBand"
-    ],
-    data: [
-        ["1", "0", "3", "Braund, Mr. Owen Harris", "male", "22.0", "1", "0", "A/5 21171", "7.25", "NaN", "S", "2"],
-        ["2", "1", "1", "Cumings, Mrs. John Bradley (Florence Briggs Thayer)", "female", "38.0", "1", "0", "PC 17599", "71.2833", "C85", "C", "3"],
-        ["3", "1", "3", "Heikkinen, Miss. Laina", "female", "26.0", "0", "0", "STON/O2. 3101282", "7.925", "NaN", "S", "2"],
-        ["4", "1", "1", "Futrelle, Mrs. Jacques Heath (Lily May Peel)", "female", "35.0", "1", "0", "113803", "53.1", "C123", "S", "3"],
-        ["5", "0", "3", "Allen, Mr. William Henry", "male", "35.0", "0", "0", "373450", "8.05", "NaN", "S", "3"]
-    ]
-}
-
-
 export function DataTable({ table, longTable = false }: DataTableProps) {
     const rows = table.data ?? [];
     const cols = table.columns ?? [];

@@ -38,46 +38,42 @@ function OutputTab({ item, allOutputItems }: OutputTabProps) {
         }
     }
 
-    const downloadImage = async (url: string, filename: string) => {
-        const response = await fetch(url);
+    const downloadFile = async (content: string, filename: string) => {
+        // Case 1: Base64 data URI
+        if (content.startsWith("data:")) {
+            const [meta, data] = content.split(",");
+            const mime = meta.match(/:(.*?);/)![1];
+            const bstr = atob(data);
+
+            const u8arr = new Uint8Array(bstr.length);
+            for (let i = 0; i < bstr.length; i++) u8arr[i] = bstr.charCodeAt(i);
+
+            return triggerDownload(new Blob([u8arr], { type: mime }), filename);
+        }
+
+        // Case 2: Blob URL
+        if (content.startsWith("blob:")) {
+            const res = await fetch(content);
+            const blob = await res.blob();
+            return triggerDownload(blob, filename);
+        }
+
+        // Case 3: regular URL
+        const response = await fetch(content);
         const blob = await response.blob();
 
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-
-        a.href = blobUrl;
-        a.download = filename;
-        a.click();
-
-        URL.revokeObjectURL(blobUrl);
+        return triggerDownload(blob, filename);
     };
 
-    const downloadBase64Image = (base64: string, filename: string) => {
-        const arr = base64.split(",");
-        const mime = arr[0].match(/:(.*?);/)![1];
-        const bstr = atob(arr[1]);
-        let n = bstr.length;
-        const u8arr = new Uint8Array(n);
-
-        while (n--) u8arr[n] = bstr.charCodeAt(n);
-
-        const blob = new Blob([u8arr], { type: mime });
+    const triggerDownload = (blob: Blob, filename: string) => {
         const blobUrl = URL.createObjectURL(blob);
-
         const a = document.createElement("a");
+
         a.href = blobUrl;
         a.download = filename;
         a.click();
 
         URL.revokeObjectURL(blobUrl);
-    };
-
-    const download = (content: string, filename: string) => {
-        if (content.startsWith("data:image")) {
-            downloadBase64Image(content, filename);
-        } else {
-            downloadImage(content, filename);
-        }
     };
 
     return (
@@ -152,7 +148,7 @@ function OutputTab({ item, allOutputItems }: OutputTabProps) {
                                 <span className="flex relative flex-row gap-1 self-end w-F">
                                     <button
                                         className="font-medium border items-center justify-center px-2 py-1 hover:bg-muted/80 rounded-md flex gap-1"
-                                        onClick={() => download(currentItem.content as string, currentItem.title || "image_output.png")}
+                                        onClick={() => downloadFile(currentItem.content as string, currentItem.title || "image_output.png")}
                                     >
                                         <Download className="size-4" />
                                         <span className="text-xs">Download</span>

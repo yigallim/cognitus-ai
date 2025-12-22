@@ -16,7 +16,8 @@ import { useEffect } from "react";
 import { useStickToBottomContext } from "use-stick-to-bottom";
 import ExpandedCodeBlock, { type CodeOutput } from "./ExpandedCodeBlock";
 import type { ChatMessage } from "@/lib/constants";
-import { CopyIcon } from "lucide-react";
+import { CopyButton } from "@/components/CopyButton";
+import { cn } from "@/lib/utils";
 
 function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: ChatMessage[] }) {
   const { scrollToBottom } = useStickToBottomContext();
@@ -54,14 +55,42 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
     }
   };
 
+  const isLastAssistantInBlock = (index: number): boolean => {
+    for (let i = index + 1; i < chatMessages.length; i++) {
+      const msg = chatMessages[i];
+      if (msg.role === "function") continue;
+      if (msg.role === "assistant") return false;
+      if (msg.role === "user") return true;
+    }
+    return true;
+  };
+
+  const copyAssistantBlock = (index: number) => {
+    let text = "";
+
+    for (let i = index; i >= 0; i--) {
+      const msg = chatMessages[i];
+
+      if (msg.role === "assistant" && msg.content) {
+        text = msg.content + "\n" + text;
+        continue;
+      }
+
+      if (msg.role === "function") continue;
+
+      if (msg.role === "user") break;
+    }
+
+    navigator.clipboard.writeText(text.trim());
+  };
+
+  const time = "Dec 21, 06:02:04 PM"; //temporary hardcoded time
+
   return (
     <>
       <ConversationContent>
         {chatMessages.map((chatMessage, index) => {
           if (chatMessage.role === "function") return null;
-
-          // check whether is the last message
-          
 
           const key = `${chatId}-${index}`;
 
@@ -72,6 +101,8 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
           ) {
             const outputs = getOutputs(chatMessage.id);
             const code = chatMessage.function_call.content;
+
+            const showCopyBar = isLastAssistantInBlock(index);
 
             return (
               <Message key={key} from="assistant">
@@ -84,9 +115,18 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
                     outputs={outputs}
                   />
                 </MessageContent>
+                {showCopyBar && (
+                  <div className="flex items-center mb-0 pb-0 gap-2">
+                    <CopyButton onCopy={() => copyAssistantBlock(index)} tooltip="Copy to clipboard" />
+                    <span className="text-gray-500 text-xs align-middle">{time}</span>
+                  </div>
+                )}
               </Message>
             );
           }
+
+          const isAssistant = chatMessage.role === "assistant";
+          const isLastAssist = isAssistant && isLastAssistantInBlock(index);
 
           return (
             <Message key={key} from={chatMessage.role as UIMessage["role"]}>
@@ -97,34 +137,26 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
                   ))}
                 </MessageAttachments>
               )}
+
               <MessageContent>
                 {chatMessage.content && <MessageResponse>{chatMessage.content}</MessageResponse>}
               </MessageContent>
-              {/* <MessageActions>
-                <MessageAction label="Copy" tooltip="Copy to clipboard" onClick={() => navigator.clipboard.writeText(chatMessage.content || "")}>
-                  <CopyIcon className="size-4" />
-                </MessageAction>
-              </MessageActions> */}
+
+              <div className={cn("flex items-center mb-0 pb-0 gap-2", isAssistant && isLastAssist ? "" : "ml-auto")}>
+                {isAssistant && isLastAssist && (
+                  <>
+                    <CopyButton onCopy={() => copyAssistantBlock(index)} tooltip="Copy to clipboard" />
+                    <span className="text-gray-500 text-xs align-middle">{time}</span>
+                  </>
+                )}
+
+                {chatMessage.role === "user" && chatMessage.content && (
+                  <CopyButton onCopy={() => navigator.clipboard.writeText(chatMessage.content!)} tooltip="Copy to clipboard" />
+                )}
+              </div>
             </Message>
           );
         })}
-        <Message from="assistant">
-          <MessageContent>
-            <MessageResponse>
-              {`| Header 1 | Header 2 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 long sentence | Row 1, Col 4 | Row 1, Col 5 | Row 1, Col 6 | Row 1, Col 7 | Row 1, Col 8 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
-| Row 2, Col 1 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | Row 2, Col 3 | Row 2, Col 4 | Row 2, Col 5long sentence | Row 2, Col 6 | Row 2, Col 7 | Row 2, Col 8 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
-| Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 long sentence | Row 1, Col 4 | Row 1, Col 5 | Row 1, Col 6 | Row 1, Col 7 | Row 1, Col 8 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
-| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | Row 2, Col 6 | Row 2, Col 7 | Row 2, Col 8 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
-| Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 long sentence | Row 1, Col 4 | Row 1, Col 5 | Row 1, Col 6 | Row 1, Col 7 | Row 1, Col 8 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
-| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 | Row 2, Col 5long sentence | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | Row 2, Col 7 | Row 2, Col 8 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
-| Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 long sentence | a48e1834-d929-4284-bd2b-80033e8adadc.ipynb | Row 1, Col 5 | Row 1, Col 6 | Row 1, Col 7 | Row 1, Col 8 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
-| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 | Row 2, Col 5long sentence | Row 2, Col 6 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | Row 2, Col 8 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
-`}
-            </MessageResponse>
-          </MessageContent>
-        </Message>
       </ConversationContent>
       <ConversationScrollButton />
     </>
@@ -132,3 +164,22 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
 }
 
 export default ChatMessages;
+
+
+//         <Message from="assistant">
+//           <MessageContent>
+//             <MessageResponse>
+//               {`| Header 1 | Header 2 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 |
+// |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+// | Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 long sentence | Row 1, Col 4 | Row 1, Col 5 | Row 1, Col 6 | Row 1, Col 7 | Row 1, Col 8 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
+// | Row 2, Col 1 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | Row 2, Col 3 | Row 2, Col 4 | Row 2, Col 5long sentence | Row 2, Col 6 | Row 2, Col 7 | Row 2, Col 8 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
+// | Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 long sentence | Row 1, Col 4 | Row 1, Col 5 | Row 1, Col 6 | Row 1, Col 7 | Row 1, Col 8 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
+// | Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | Row 2, Col 6 | Row 2, Col 7 | Row 2, Col 8 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
+// | Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 long sentence | Row 1, Col 4 | Row 1, Col 5 | Row 1, Col 6 | Row 1, Col 7 | Row 1, Col 8 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
+// | Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 | Row 2, Col 5long sentence | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | Row 2, Col 7 | Row 2, Col 8 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
+// | Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 long sentence | a48e1834-d929-4284-bd2b-80033e8adadc.ipynb | Row 1, Col 5 | Row 1, Col 6 | Row 1, Col 7 | Row 1, Col 8 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
+// | Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 | Row 2, Col 5long sentence | Row 2, Col 6 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | Row 2, Col 8 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
+// `}
+//             </MessageResponse>
+//           </MessageContent>
+//         </Message>
