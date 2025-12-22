@@ -10,8 +10,7 @@ import pythonLogo from "../../assets/pythonicon.webp";
 import type { TableData } from "../../components/Table.tsx";
 
 const programmingLanguages = [
-  { name: "Python", logo: pythonLogo },
-  { name: "jsx", logo: pythonLogo },
+  { name: "Python", logo: pythonLogo }
 ];
 
 export interface CodeOutput {

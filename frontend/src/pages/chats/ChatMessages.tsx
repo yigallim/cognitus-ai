@@ -4,8 +4,6 @@ import {
 } from "@/components/ai-elements/conversation";
 import {
   Message,
-  MessageAction,
-  MessageActions,
   MessageAttachment,
   MessageAttachments,
   MessageContent,
@@ -71,8 +69,12 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
     for (let i = index; i >= 0; i--) {
       const msg = chatMessages[i];
 
-      if (msg.role === "assistant" && msg.content) {
-        text = msg.content + "\n" + text;
+      if (msg.role === "assistant") {
+        if (msg.content) {
+          text = msg.content + "\n" + text;
+        } else if (msg.function_call?.content) {
+          text = msg.function_call.content + "\n" + text;
+        }
         continue;
       }
 
