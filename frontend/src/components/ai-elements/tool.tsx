@@ -108,34 +108,38 @@ export type ToolInputProps = ComponentProps<"div"> & {
   languages?: { name: string; logo: string };
 };
 
-export const ToolInput = ({ className, input, languages, ...props }: ToolInputProps) => (
-  <div className={cn("space-y-2 overflow-hidden px-4 py-1", className)} {...props}>
-    {languages && (
-      <div className="flex items-center gap-2">
-        <img src={languages.logo} alt={languages.name} className="w-5 h-5" />
-        <h4 className="font-medium text-sm tracking-wide">{languages?.name ?? ""}</h4>
-      </div>
-    )}
+export const ToolInput = ({ className, input, languages, ...props }: ToolInputProps) => {
+  const isSql = languages?.name.toLowerCase() !== "python";
 
-    <div className="rounded-md bg-muted/50">
-      {/* <CodeBlock code={JSON.stringify(input, null, 2)} language="json"  /> */}
-      <CodeBlock
-        code={input as string}
-        language={languages?.name.toLowerCase() as BundledLanguage}
-        showLineNumbers={true}
-      >
-        <CodeBlockCopyButton />
-      </CodeBlock>
+  return (
+    <div className={cn("space-y-2 overflow-hidden px-4 py-1", className)} {...props}>
+      {languages && (
+        <div className="flex items-center gap-2">
+          <img src={languages.logo} alt={languages.name} className="w-5 h-5" />
+          <h4 className="font-medium text-sm tracking-wide">{languages?.name ?? ""}</h4>
+        </div>
+      )}
+
+      <div className="rounded-md bg-muted/50">
+        {/* <CodeBlock code={JSON.stringify(input, null, 2)} language="json"  /> */}
+        <CodeBlock
+          code={input as string}
+          language={isSql ? "sql" : (languages?.name.toLowerCase() as BundledLanguage)}
+          showLineNumbers={true}
+        >
+          <CodeBlockCopyButton />
+        </CodeBlock>
+      </div>
     </div>
-  </div>
-);
+  );
+}
 
 export type ToolOutputProps = ComponentProps<"div"> & {
   output: ToolUIPart["output"];
   errorText: ToolUIPart["errorText"];
 };
 
-export const ToolOutput = ({ className, output, errorText, ...props }: ToolOutputProps) => {
+export const ToolOutput = ({ className, output, errorText, isSql, ...props }: ToolOutputProps & { isSql: boolean }) => {
   if (!(output || errorText)) {
     return null;
   }
@@ -156,7 +160,7 @@ export const ToolOutput = ({ className, output, errorText, ...props }: ToolOutpu
   return (
     <div className={cn("space-y-2 px-4 pt-1.5 pb-4", className)} {...props}>
       <h4 className="font-medium text-sm tracking-wide mb-0">
-        {errorText ? "Error" : "Code Explanation"}
+        {errorText ? "Error" : isSql ? "Query Explanation" : "Code Explanation"}
       </h4>
       <div
         className={cn(
@@ -181,29 +185,29 @@ export const ToolOutputItems = ({ items }: { items: CodeOutput[] }) => {
   );
 };
 
-export const getOutputBoxItem = ({item}: {item: CodeOutput}) => {
+export const getOutputBoxItem = ({ item }: { item: CodeOutput }) => {
   const icon =
-      {
-        table: Table,
-        text: FileText,
-        chart: LineChart,
-        image: ImageIcon,
-      }[item.type] || FileText;
+    {
+      table: Table,
+      text: FileText,
+      chart: LineChart,
+      image: ImageIcon,
+    }[item.type] || FileText;
 
-    const titleMapping: Record<CodeOutput["type"], string> = {
-      table: "Table",
-      text: "Text",
-      chart: "Chart",
-      image: "Image",
-    };
+  const titleMapping: Record<CodeOutput["type"], string> = {
+    table: "Table",
+    text: "Text",
+    chart: "Chart",
+    image: "Image",
+  };
 
-    const title = item.title || titleMapping[item.type];
+  const title = item.title || titleMapping[item.type];
 
-    return { icon, title };
+  return { icon, title };
 }
 
 const ToolOutputItem = ({ item, allOutputItems }: OutputTabProps) => {
-  const { icon: Icon, title } = getOutputBoxItem({item});
+  const { icon: Icon, title } = getOutputBoxItem({ item });
   return (
     <Sheet>
       <SheetTrigger asChild>

@@ -119,9 +119,9 @@ function ChatMessages({ chatId, chatMessages, image_dict }: { chatId: string; ch
 
       if (msg.role === "assistant") {
         if (msg.content) {
-          text = msg.content + "\n" + text;
+          text = msg.content + "\n\n" + text;
         } else if (msg.function_call?.content) {
-          text = msg.function_call.content + "\n" + text;
+          text = msg.function_call.content + "\n\n" + text;
         }
         continue;
       }
@@ -147,21 +147,23 @@ function ChatMessages({ chatId, chatMessages, image_dict }: { chatId: string; ch
           if (
             chatMessage.role === "assistant" &&
             chatMessage.function_call &&
-            chatMessage.function_call.name === "execute_code"
+            (chatMessage.function_call.name === "execute_code" ||
+              chatMessage.function_call.name === "execute_sql")
           ) {
             const outputs = getOutputs(chatMessage.id);
             const code = chatMessage.function_call.content;
-
             const showCopyBar = isLastAssistantInBlock(index);
+
+            const isPythonCode = chatMessage.function_call.name === "execute_code";
 
             return (
               <Message key={key} from="assistant">
                 <MessageContent>
                   <ExpandedCodeBlock
-                    title="Code"
-                    language="python"
+                    title={isPythonCode ? "Code" : "SQL Query"}
+                    language={isPythonCode ? "python" : "MySQL"}
                     code={code}
-                    codeExplanation="Executed code block"
+                    codeExplanation={isPythonCode ? "Executed code block" : "Executed SQL query"}
                     outputs={outputs}
                   />
                 </MessageContent>

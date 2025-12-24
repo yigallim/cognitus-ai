@@ -7,10 +7,16 @@ import {
   ToolOutputItems,
 } from "@/components/ai-elements/tool.tsx";
 import pythonLogo from "../../assets/pythonicon.webp";
+import postgreLogo from "../../assets/Postgres_logo.webp";
+import mysqlLogo from "../../assets/mysql_logo.webp";
+import supabaseLogo from "../../assets/supabase-logo.webp";
 import type { TableData } from "../../components/Table.tsx";
 
 const programmingLanguages = [
-  { name: "Python", logo: pythonLogo }
+  { name: "Python", logo: pythonLogo },
+  { name: "MySQL", logo: mysqlLogo },
+  { name: "PostgreSQL", logo: postgreLogo },
+  { name: "Supabase", logo: supabaseLogo }
 ];
 
 export interface CodeOutput {
@@ -46,7 +52,7 @@ function ExpandedCodeBlock({
             (lang) => lang.name.toLowerCase() === language.toLowerCase()
           )}
         />
-        <ToolOutput output={codeExplanation} errorText={errorText} />
+        <ToolOutput output={codeExplanation} errorText={errorText} isSql={language.toLowerCase() !== "python"} />
       </ToolContent>
       {outputs && outputs.length > 0 && <ToolOutputItems items={outputs} />}
     </Tool>

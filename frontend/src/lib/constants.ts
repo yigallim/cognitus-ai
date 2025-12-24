@@ -198,6 +198,44 @@ mean_fare_rounded`,
   {
     id: "6",
     role: "assistant",
+    function_call: {
+      name: "execute_sql",
+      content: `SELECT customers.name, orders.order_date, orders.total_amount
+FROM customers
+JOIN orders ON customers.id = orders.customer_id
+WHERE orders.total_amount > 100
+ORDER BY orders.order_date DESC;`
+    }
+  },
+  {
+    id: "7",
+    role: "function",
+    name: "run_code",
+    belongsTo: "6",
+    output: `{ 
+    "[table]-1245bg18": {
+    "columns": [
+      "Header 1", "Header 2", "Header 3", "Header 4", "Header 5", "Header 6",
+      "Header 7", "Header 8", "Header 9", "Header 10", "Header 11", "Header 12",
+      "Header 13"
+    ],
+    "data": [
+      ["1", "0", "3", "Braund, Mr. Owen Harris", "male", "22.0", "1", "0", "A/5 21171", "7.25", "NaN", "S", "4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb"],
+      ["2", "1", "1", "Cumings, Mrs. John Bradley (Florence Briggs Thayer)", "female", "38.0", "1", "0", "PC 17599", "71.2833", "C85", "C", "4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb"],
+      ["3", "1", "3", "Heikkinen, Miss. Laina", "female", "26.0", "0", "0", "STON/O2. 3101282", "7.925", "NaN", "S", "4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb"],
+      ["4", "1", "1", "Futrelle, Mrs. Jacques Heath (Lily May Peel)", "female", "35.0", "1", "0", "113803", "53.1", "C123", "S", "4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb"],
+      ["5", "0", "3", "Allen, Mr. William Henry", "male", "35.0", "0", "0", "373450", "8.05", "NaN", "S", "4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb"],
+      ["1", "0", "3", "Braund, Mr. Owen Harris", "male", "22.0", "1", "0", "A/5 21171", "7.25", "NaN", "S", "4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb"],
+      ["2", "1", "1", "Cumings, Mrs. John Bradley (Florence Briggs Thayer)", "female", "38.0", "1", "0", "PC 17599", "71.2833", "C85", "C", "4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb"],
+      ["3", "1", "3", "Heikkinen, Miss. Laina", "female", "26.0", "0", "0", "STON/O2. 3101282", "7.925", "NaN", "S", "4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb"],
+      ["4", "1", "1", "Futrelle, Mrs. Jacques Heath (Lily May Peel)", "female", "35.0", "1", "0", "113803", "53.1", "C123", "S", "4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb"],
+      ["5", "0", "3", "Allen, Mr. William Henry", "male", "35.0", "0", "0", "373450", "8.05", "NaN", "S", "4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb"]
+    ]
+  } }`
+  },
+  {
+    id: "8",
+    role: "assistant",
     content: `
 # Summary of the Analysis
 The task was to calculate the mean fare paid by passengers using the dataset \`test_ave.csv\`. The following steps were taken to achieve this:
