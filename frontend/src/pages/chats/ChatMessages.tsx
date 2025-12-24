@@ -44,6 +44,8 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
           outputs.push({ type: "text", content: outputData[key] });
         } else if (key.startsWith("[image]")) {
           outputs.push({ type: "image", content: outputData[key] });
+        } else if (key.startsWith("[chart]")) {
+          outputs.push({ type: "chart", content: outputData[key] });
         }
       });
       return outputs;
@@ -166,22 +168,3 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
 }
 
 export default ChatMessages;
-
-
-//         <Message from="assistant">
-//           <MessageContent>
-//             <MessageResponse>
-//               {`| Header 1 | Header 2 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 | Header 3 |
-// |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-// | Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 long sentence | Row 1, Col 4 | Row 1, Col 5 | Row 1, Col 6 | Row 1, Col 7 | Row 1, Col 8 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
-// | Row 2, Col 1 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | Row 2, Col 3 | Row 2, Col 4 | Row 2, Col 5long sentence | Row 2, Col 6 | Row 2, Col 7 | Row 2, Col 8 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
-// | Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 long sentence | Row 1, Col 4 | Row 1, Col 5 | Row 1, Col 6 | Row 1, Col 7 | Row 1, Col 8 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
-// | Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | Row 2, Col 6 | Row 2, Col 7 | Row 2, Col 8 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
-// | Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 long sentence | Row 1, Col 4 | Row 1, Col 5 | Row 1, Col 6 | Row 1, Col 7 | Row 1, Col 8 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
-// | Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 | Row 2, Col 5long sentence | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | Row 2, Col 7 | Row 2, Col 8 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
-// | Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 long sentence | a48e1834-d929-4284-bd2b-80033e8adadc.ipynb | Row 1, Col 5 | Row 1, Col 6 | Row 1, Col 7 | Row 1, Col 8 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | Row 1, Col 9 | Row 1, Col 10 | Row 1, Col 11 | Row 1, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
-// | Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 | Row 2, Col 5long sentence | Row 2, Col 6 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | Row 2, Col 8 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | Row 2, Col 9 | Row 2, Col 10 | Row 2, Col 11 | Row 2, Col 12 | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb | 4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb |
-// `}
-//             </MessageResponse>
-//           </MessageContent>
-//         </Message>

@@ -5,7 +5,7 @@ import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { FileUIPart, UIMessage } from "ai";
-import { ChevronLeftIcon, ChevronRightIcon, PaperclipIcon, XIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, File, FileJson, FileSpreadsheet, FileText, XIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
 import { createContext, memo, useContext, useEffect, useState } from "react";
 import { Streamdown } from "streamdown";
@@ -323,7 +323,7 @@ const customComponents = {
     }
 
     return (
-      <DataTable table={ { columns: cols, data: rows } } className={className} {...props}>
+      <DataTable table={{ columns: cols, data: rows }} className={className} {...props}>
         {children}
       </DataTable>
     );
@@ -333,9 +333,10 @@ const customComponents = {
     const src = node.properties?.src || '';
 
     return (
-      <ImageOutput currentItem={ { type: 'image', content: src, title: alt } } className={className} {...props} />
+      <ImageOutput currentItem={{ type: 'image', content: src, title: alt }} className={className} {...props} />
     );
-  }
+  },
+  p: ({ children, ...props }: any) => <p className="mb-2 last:mb-0" {...props}>{children}</p>,
 };
 
 export const MessageResponse = memo(
@@ -371,6 +372,23 @@ export function MessageAttachment({ data, className, onRemove, ...props }: Messa
   const url = data.url;
   const isImage = mediaType.startsWith("image/") && url;
 
+  const getAttachmentIcon = (filename: string) => {
+    const extension = filename.split(".").pop()?.toLowerCase();
+    switch (extension) {
+      case "csv":
+      case "xlsx":
+        return FileSpreadsheet;
+      case "json":
+        return FileJson;
+      case "md":
+      case "txt":
+        return FileText;
+      default:
+        return File;
+    };
+  }
+  const AttachmentIcon = getAttachmentIcon(filename);
+
   return (
     <div className={cn("group relative overflow-hidden rounded-lg", className)} {...props}>
       {isImage ? (
@@ -403,7 +421,7 @@ export function MessageAttachment({ data, className, onRemove, ...props }: Messa
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center gap-2 bg-muted px-3 py-2 rounded-lg border shadow-sm max-w-[200px] min-w-0">
-                <PaperclipIcon className="h-4 w-4 text-gray-500" />
+                <AttachmentIcon className="size-5 text-gray-500" />
                 <p className="text-sm max-w-[150px] truncate">
                   <a
                     href={url}

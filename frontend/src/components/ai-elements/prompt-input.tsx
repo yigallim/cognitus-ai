@@ -37,10 +37,13 @@ import { cn } from "@/lib/utils";
 import type { ChatStatus, FileUIPart } from "ai";
 import {
   CornerDownLeftIcon,
+  FileJson,
+  FileSpreadsheet,
+  FileText,
   Loader2Icon,
   MicIcon,
   Paperclip,
-  PaperclipIcon,
+  File,
   PlusIcon,
   SquareIcon,
   XIcon,
@@ -142,7 +145,7 @@ export function PromptInputProvider({
   // ----- attachments state (global when wrapped)
   const [attachmentFiles, setAttachmentFiles] = useState<(FileUIPart & { id: string })[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const openRef = useRef<() => void>(() => {});
+  const openRef = useRef<() => void>(() => { });
 
   const add = useCallback((files: (File | any)[] | FileList) => {
     const incoming = Array.from(files);
@@ -282,6 +285,23 @@ export function PromptInputAttachment({ data, className, ...props }: PromptInput
 
   const attachmentLabel = filename || (isImage ? "Image" : "Attachment");
 
+  const getAttachmentIcon = (filename: string) => {
+    const extension = filename.split(".").pop()?.toLowerCase();
+    switch (extension) {
+      case "csv":
+      case "xlsx":
+        return FileSpreadsheet;
+      case "json":
+        return FileJson;
+      case "md":
+      case "txt":
+        return FileText;
+      default:
+        return File;
+    };
+  }
+  const AttachmentIcon = getAttachmentIcon(filename);
+
   return (
     <PromptInputHoverCard>
       <HoverCardTrigger asChild>
@@ -304,8 +324,8 @@ export function PromptInputAttachment({ data, className, ...props }: PromptInput
                   width={20}
                 />
               ) : (
-                <div className="flex size-5 items-center justify-center text-muted-foreground">
-                  <PaperclipIcon className="size-3" />
+                <div className="flex size-5 items-center justify-center text-muted-foreground bg-muted">
+                  <AttachmentIcon className="size-3" />
                 </div>
               )}
             </div>
@@ -397,7 +417,7 @@ export const PromptInputActionAddAttachments = ({
         e.preventDefault();
         attachments.openFileDialog();
       }}
-      className="text-black"
+      className="text-black cursor-pointer hover:ring-1 hover:ring-gray-200 dark:text-white dark:hover:bg-gray-700"
     >
       <Paperclip className="mr-2 size-4" /> {label}
     </InputGroupButton>
@@ -488,9 +508,8 @@ export const PromptInput = ({
       // 1. Extension check
       const accepted = incoming.filter((f) => matchesAccept(f));
       if (incoming.length > 0 && accepted.length === 0) {
-        const msg = `Invalid file type. Only ${
-          accept || ALLOWED_EXTENSIONS.join(", ")
-        } files are accepted.`;
+        const msg = `Invalid file type. Only ${accept || ALLOWED_EXTENSIONS.join(", ")
+          } files are accepted.`;
         toast.error(msg);
         onError?.({
           code: "accept",
@@ -695,9 +714,9 @@ export const PromptInput = ({
     const text = usingProvider
       ? controller.textInput.value
       : (() => {
-          const formData = new FormData(form);
-          return (formData.get("message") as string) || "";
-        })();
+        const formData = new FormData(form);
+        return (formData.get("message") as string) || "";
+      })();
 
     // Reset form immediately after capturing text to avoid race condition
     // where user input during async blob conversion would be lost
@@ -851,15 +870,15 @@ export const PromptInputTextarea = ({
 
   const controlledProps = controller
     ? {
-        value: controller.textInput.value,
-        onChange: (e: ChangeEvent<HTMLTextAreaElement>) => {
-          controller.textInput.setInput(e.currentTarget.value);
-          onChange?.(e);
-        },
-      }
+      value: controller.textInput.value,
+      onChange: (e: ChangeEvent<HTMLTextAreaElement>) => {
+        controller.textInput.setInput(e.currentTarget.value);
+        onChange?.(e);
+      },
+    }
     : {
-        onChange,
-      };
+      onChange,
+    };
 
   return (
     <InputGroupTextarea
@@ -891,7 +910,7 @@ export type PromptInputFooterProps = Omit<ComponentProps<typeof InputGroupAddon>
 export const PromptInputFooter = ({ className, ...props }: PromptInputFooterProps) => (
   <InputGroupAddon
     align="block-end"
-    className={cn("justify-between gap-1", className)}
+    className={cn("justify-between gap-1 pb-2", className)}
     {...props}
   />
 );
@@ -1037,10 +1056,10 @@ interface SpeechRecognitionErrorEvent extends Event {
 declare global {
   interface Window {
     SpeechRecognition: {
-      new (): SpeechRecognition;
+      new(): SpeechRecognition;
     };
     webkitSpeechRecognition: {
-      new (): SpeechRecognition;
+      new(): SpeechRecognition;
     };
   }
 }
