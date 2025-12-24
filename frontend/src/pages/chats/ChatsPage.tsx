@@ -12,9 +12,11 @@ import type { ChatMessage } from "@/lib/constants";
 function ChatsPage({
   chatId,
   initialMessages,
+  image_dict,
 }: {
   chatId: string;
   initialMessages: ChatMessage[];
+  image_dict: Record<string, string>;
 }) {
   // status: streaming
   // sendMessage: function to send message (api call)
@@ -27,7 +29,7 @@ function ChatsPage({
   useEffect(() => {
     setMessages(initialMessages);
   }, [initialMessages]);
-  
+
   const location = useLocation();
   const [fileState] = useState(() => location.state?.files ?? []);
 

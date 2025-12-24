@@ -53,7 +53,11 @@ function AppRoutes() {
           path={session.url}
           element={
             <ProtectedRoute>
-              <ChatsPage chatId={session.id} initialMessages={session.messages} />
+              <ChatsPage
+                chatId={session.id}
+                initialMessages={session.messages}
+                image_dict={session.image_dict}
+              />
             </ProtectedRoute>
           }
         />

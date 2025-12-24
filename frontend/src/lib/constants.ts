@@ -31,11 +31,17 @@ interface FunctionMessage {
 
 export type ChatMessage = UserMessage | AssistantMessage | FunctionMessage;
 
+const image_dict: Record<string, string> = {
+  xbl9ls3909txdouu:
+    "https://scikit-learn.org/stable/_images/sphx_glr_plot_release_highlights_1_5_0_001.png",
+};
+
 export interface ChatHistoryItem {
   id: string;
   title: string;
   url: string;
   messages: ChatMessage[];
+  image_dict: Record<string, string>;
 }
 const chatHistory1: ChatMessage[] = [
   {
@@ -82,9 +88,11 @@ Simple Table:
 | Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 | Row 1, Col 4 |
 | Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 |
 \n\nAnd here is an image:\n\n
+<image-tag>xbl9ls3909txdouu</image-tag>
 ![Image](https://i.postimg.cc/Mp3ZXpdm/image.png)`,
   },
 ];
+
 const chatHistory3: ChatMessage[] = [
   {
     id: "1",
@@ -203,17 +211,20 @@ export const CHAT_SESSIONS: ChatHistoryItem[] = [
     title: "Chat 1",
     url: "/05f60180-6d3c-4590-b659-81b4592f71ec",
     messages: chatHistory1,
+    image_dict: image_dict,
   },
   {
     id: "2",
     title: "Chat 2",
     url: "/c952df0b-75be-4b1f-b094-00902ac744d3",
     messages: chatHistory2,
+    image_dict: image_dict,
   },
   {
     id: "3",
     title: "Chat 3",
     url: "/3d960391-be5b-45e1-a674-834db7c67518",
     messages: chatHistory3,
+    image_dict: image_dict,
   },
 ];
