@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .config import settings
+from .config import config
 from .auth.router import router as auth_router
 from .files.router import router as files_router
+from .chat.router import router as chat_router
 from .database import mongodb_client
 from contextlib import asynccontextmanager
 import subprocess
@@ -36,7 +37,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=config.cors_origin,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -44,6 +45,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(files_router)
+app.include_router(chat_router)
 
 @app.get("/health", tags=["system"])
 async def health():

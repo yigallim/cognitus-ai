@@ -20,15 +20,18 @@ function ChatsPage({
 }) {
   // status: streaming
   // sendMessage: function to send message (api call)
-  const { messages, setMessages, status, sendMessage } = useChat<ChatMessage & any>({
+  const { messages, setMessages } = useChat<ChatMessage & any>({
     // transport: new DefaultChatTransport({
     //   api: '/api/ai/chat'
     // }),
   });
 
   useEffect(() => {
-    setMessages(initialMessages);
-  }, [initialMessages]);
+    // Only hydrate with initial messages if none are present
+    if (messages.length === 0 && initialMessages?.length) {
+      setMessages(initialMessages);
+    }
+  }, [initialMessages, messages.length, setMessages]);
 
   const location = useLocation();
   const [fileState] = useState(() => location.state?.files ?? []);
@@ -51,6 +54,7 @@ function ChatsPage({
             <div className="mt-10">
               <PromptInputProvider>
                 <ChatInput
+                  chatId={chatId}
                   chatMessages={messages}
                   setChatMessages={setMessages}
                   files={fileState}
@@ -63,7 +67,7 @@ function ChatsPage({
 
       {messages.length > 0 && (
         <PromptInputProvider>
-          <ChatInput chatMessages={messages} setChatMessages={setMessages} />
+          <ChatInput chatId={chatId} chatMessages={messages} setChatMessages={setMessages} />
         </PromptInputProvider>
       )}
     </div>

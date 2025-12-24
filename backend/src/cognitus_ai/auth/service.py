@@ -1,12 +1,11 @@
 from datetime import timedelta
 import docker
 from .schemas import UserInDB, Role, UserCreate
-from uuid6 import uuid7
 from .utils import get_password_hash, verify_password
 from .repository import TokenRepository, UserRepository
-from cognitus_ai.config import settings
+from cognitus_ai.config import config
 from cognitus_ai.database import db
-from cognitus_ai.logging import logger
+from cognitus_ai.utils.logging import logger
 
 class AuthService:
     def __init__(self):
@@ -33,47 +32,44 @@ class AuthService:
         existing_user = await self.user_repository.get_by_email(user_create.email)
         if existing_user:
             raise ValueError("User with this email already exists")
-        
-        user_id = uuid7()
         container_info = {}
         
-        if self.docker_client:
-            container_name = f"user-{user_id}"
-            try:
-                container = self.docker_client.containers.run(
-                    image=settings.CONTAINER_IMAGE_NAME,
-                    name=container_name,
-                    network=settings.CONTAINER_NETWORK,
-                    detach=True,
-                    tty=True,
-                    command="tail -f /dev/null"
-                )
+        # if self.docker_client:
+        #     container_name = f"user-{user_id}"
+        #     try:
+        #         container = self.docker_client.containers.run(
+        #             image=settings.CONTAINER_IMAGE_NAME,
+        #             name=container_name,
+        #             network=settings.CONTAINER_NETWORK,
+        #             detach=True,
+        #             tty=True,
+        #             command="tail -f /dev/null"
+        #         )
                 
-                container.reload()
-                network_settings = container.attrs['NetworkSettings']['Networks'].get(settings.CONTAINER_NETWORK)
-                ip_address = network_settings['IPAddress'] if network_settings else None
+        #         container.reload()
+        #         network_settings = container.attrs['NetworkSettings']['Networks'].get(settings.CONTAINER_NETWORK)
+        #         ip_address = network_settings['IPAddress'] if network_settings else None
                 
-                container_info = {
-                    "container_id": container.id,
-                    "container_name": container_name,
-                    "container_ip": ip_address
-                }
-                logger.info(f"Successfully created Docker container '{container_name}' (IP: {ip_address}) for user {user_create.email}")
-            except Exception as e:
-                logger.error(f"Failed to create Docker container for user {user_create.email}: {e}")
+        #         container_info = {
+        #             "container_id": container.id,
+        #             "container_name": container_name,
+        #             "container_ip": ip_address
+        #         }
+        #         logger.info(f"Successfully created Docker container '{container_name}' (IP: {ip_address}) for user {user_create.email}")
+        #     except Exception as e:
+        #         logger.error(f"Failed to create Docker container for user {user_create.email}: {e}")
 
         hashed_password = get_password_hash(user_create.password)
         user_in_db = UserInDB(
             **user_create.model_dump(exclude={"password"}),
             hashed_password=hashed_password,
-            id=user_id,
             is_active=True,
             **container_info
         )
         return await self.user_repository.create(user_in_db)
 
     async def store_refresh_token(self, token: str, email: str):
-        ttl = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        ttl = timedelta(days=config.auth.refresh_token_expire_days)
         await self.token_repository.set_token(token, email, ttl)
 
     async def revoke_refresh_token(self, token: str):

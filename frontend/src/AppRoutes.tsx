@@ -1,11 +1,12 @@
 import { Route, Routes } from "react-router";
 import DataConnectorsPage from "./pages/dataConnector/DataConnectorsPage";
 import ChatsPage from "./pages/chats/ChatsPage";
+import ChatRoute from "./pages/chats/ChatRoute";
 import FilesPage from "./pages/FilesPage";
 import PublicRoute from "./routes/PublicRoute";
 import ProtectedRoute from "./routes/ProtectedRoutes";
 import LoginForm from "./pages/Login";
-import { CHAT_SESSIONS } from "./lib/constants";
+// dynamic chats now driven by backend; no static sessions
 
 function AppRoutes() {
   return (
@@ -23,7 +24,7 @@ function AppRoutes() {
         path="/"
         element={
           <ProtectedRoute>
-            <ChatsPage chatId="new-chat" initialMessages={[]} image_dict={{}}/>
+            <ChatsPage chatId="new-chat" initialMessages={[]} image_dict={{}} />
           </ProtectedRoute>
         }
       />
@@ -46,22 +47,15 @@ function AppRoutes() {
         }
       />
 
-      {/* Dynamic chat routes from constants */}
-      {CHAT_SESSIONS.map((session) => (
-        <Route
-          key={session.id}
-          path={session.url}
-          element={
-            <ProtectedRoute>
-              <ChatsPage
-                chatId={session.id}
-                initialMessages={session.messages}
-                image_dict={session.image_dict}
-              />
-            </ProtectedRoute>
-          }
-        />
-      ))}
+      {/* Chat route */}
+      <Route
+        path="/chats/:chatId"
+        element={
+          <ProtectedRoute>
+            <ChatRoute />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }

@@ -1,0 +1,25 @@
+llm:
+  model: ${OPENAI_MODEL}
+  api_key: ${OPENAI_API_KEY}
+  base_url: ${OPENAI_BASE_URL}
+  temperature: 0.2
+  top_p: 0.5
+
+redis:
+  host: "127.0.0.1"
+  port: 6379
+  db: 0
+
+mongo:
+  url: "mongodb://localhost:27017"
+  database: "cognitus_ai"
+
+cors_origin:
+  - "http://localhost:5173"
+  - "http://127.0.0.1:5173"
+
+auth:
+  secret_key: ""
+  algorithm: "HS256"
+  access_token_expire_minutes: 30
+  refresh_token_expire_days: 7

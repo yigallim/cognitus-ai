@@ -1,16 +1,16 @@
 from redis.asyncio import Redis
 from motor.motor_asyncio import AsyncIOMotorClient
-from .config import settings
+from .config import config
 
 redis_client = Redis(
-    host=settings.REDIS_HOST,
-    port=settings.REDIS_PORT,
-    db=settings.REDIS_DB,
+    host=config.redis.host,
+    port=config.redis.port,
+    db=config.redis.db,
     decode_responses=True
 )
 
-mongodb_client = AsyncIOMotorClient(settings.MONGODB_URL)
-db = mongodb_client[settings.MONGODB_DATABASE]
+mongodb_client = AsyncIOMotorClient(config.mongo.url)
+db = mongodb_client[config.mongo.database]
 
 async def get_db():
     return db

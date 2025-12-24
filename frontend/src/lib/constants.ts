@@ -68,7 +68,7 @@ JOIN orders ON customers.id = orders.customer_id
 WHERE orders.total_amount > 100
 ORDER BY orders.order_date DESC;
 \`\`\`
-`
+`,
   },
 ];
 const chatHistory2: ChatMessage[] = [
@@ -193,7 +193,7 @@ mean_fare_rounded`,
       ["5", "0", "3", "Allen, Mr. William Henry", "male", "35.0", "0", "0", "373450", "8.05", "NaN", "S", "4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb"]
     ]
   }, 
-    "[image]-2573c8b1": "https://i.postimg.cc/Mp3ZXpdm/image.png" }`
+    "[image]-2573c8b1": "https://i.postimg.cc/Mp3ZXpdm/image.png" }`,
   },
   {
     id: "6",
@@ -204,8 +204,8 @@ mean_fare_rounded`,
 FROM customers
 JOIN orders ON customers.id = orders.customer_id
 WHERE orders.total_amount > 100
-ORDER BY orders.order_date DESC;`
-    }
+ORDER BY orders.order_date DESC;`,
+    },
   },
   {
     id: "7",
@@ -231,7 +231,7 @@ ORDER BY orders.order_date DESC;`
       ["4", "1", "1", "Futrelle, Mrs. Jacques Heath (Lily May Peel)", "female", "35.0", "1", "0", "113803", "53.1", "C123", "S", "4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb"],
       ["5", "0", "3", "Allen, Mr. William Henry", "male", "35.0", "0", "0", "373450", "8.05", "NaN", "S", "4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb"]
     ]
-  } }`
+  } }`,
   },
   {
     id: "8",

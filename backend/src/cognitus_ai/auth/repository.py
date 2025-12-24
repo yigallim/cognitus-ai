@@ -40,10 +40,9 @@ class UserRepository:
         return None
 
     async def create(self, user: UserInDB) -> UserInDB:
-        user_dict = user.model_dump()
-        # Ensure ID is string for Mongo storage if needed, or keep as UUID
-        # Pydantic will handle UUID to str conversion in model_dump if configured, 
-        # but let's be explicit if we want.
-        user_dict["id"] = str(user.id)
-        await self.collection.insert_one(user_dict)
-        return user
+        # Exclude id so MongoDB will generate _id (ObjectId)
+        user_dict = user.model_dump(exclude={"id"})
+        result = await self.collection.insert_one(user_dict)
+        # Map generated _id back to schema's id
+        user_dict["id"] = result.inserted_id
+        return UserInDB(**user_dict)

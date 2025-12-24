@@ -17,12 +17,20 @@ import { MessageSquare, Folder, Link as LinkIcon, SquarePen } from "lucide-react
 import { cn } from "@/lib/utils";
 import NavUser from "./NavUser";
 import CollapsibleChat from "./CollapsibleChat";
-import { CHAT_SESSIONS } from "@/lib/constants";
+import { useEffect } from "react";
+import { useChatStore } from "@/stores/useChatStore";
 
 function AppSidebar() {
   const location = useLocation();
   const { state } = useSidebar();
   const expanded = state === "expanded";
+
+  const fetchChats = useChatStore((s) => s.fetchChats);
+  const chats = useChatStore((s) => s.chats);
+
+  useEffect(() => {
+    fetchChats();
+  }, [fetchChats]);
 
   // App Sidebar Component
   const sidebarItems = [
@@ -30,9 +38,9 @@ function AppSidebar() {
       title: "Chats",
       icon: MessageSquare,
       url: "/",
-      items: CHAT_SESSIONS.map((session) => ({
-        title: session.title,
-        url: session.url,
+      items: chats.map((c) => ({
+        title: c.title,
+        url: `/chats/${c.id}`,
       })),
     },
     {

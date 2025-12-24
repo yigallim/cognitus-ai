@@ -1,23 +1,51 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
+import yaml
+from typing import List
+from pydantic import BaseModel, Field, ConfigDict
+from string import Template
+from dotenv import load_dotenv
 
-class Settings(BaseSettings):
-    SECRET_KEY: str = "your-super-secret-key-change-this-in-prod"
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 10
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    ENVIRONMENT: str = "dev"
-    CORS_ORIGINS: list[str] = ["http://localhost:5173"]
-    
-    REDIS_HOST: str = "127.0.0.1"
-    REDIS_PORT: int = 6379
-    REDIS_DB: int = 0
+load_dotenv()
 
-    MONGODB_URL: str = "mongodb://localhost:27017"
-    MONGODB_DATABASE: str = "cognitus_ai"
+class LLMSettings(BaseModel):
+    model: str
+    api_key: str
+    base_url: str
+    temperature: float = 0.2
+    top_p: float = 0.5
 
-    CONTAINER_IMAGE_NAME: str = "python:3.12.12-slim-bookworm"
-    CONTAINER_NETWORK: str = "cognitus-ai"
+class RedisSettings(BaseModel):
+    host: str = "127.0.0.1"
+    port: int = 6379
+    db: int = 0
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+class MongoSettings(BaseModel):
+    url: str = "mongodb://localhost:27017"
+    database: str = "cognitus_ai"
 
-settings = Settings()
+class AuthSettings(BaseModel):
+    secret_key: str
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
+    refresh_token_expire_days: int = 7
+
+class Config(BaseModel):
+    llm: LLMSettings
+    redis: RedisSettings
+    mongo: MongoSettings
+    cors_origin: List[str]
+    auth: AuthSettings
+
+    model_config = ConfigDict(
+        extra="ignore",
+        populate_by_name=True
+    )
+
+def load_config(config_path: str = "config.yaml") -> Config:
+    with open(config_path, "r") as f:
+        raw_yaml = f.read()
+        expanded_yaml = Template(raw_yaml).safe_substitute(os.environ)
+        config_dict = yaml.safe_load(expanded_yaml)
+        return Config(**config_dict)
+
+config = load_config()

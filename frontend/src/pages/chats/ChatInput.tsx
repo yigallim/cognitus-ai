@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router";
 import { SendHorizontal } from "lucide-react";
 import type { ChatMessage } from "@/lib/constants";
 import {
@@ -15,17 +16,21 @@ import {
   usePromptInputController,
   type PromptInputMessage,
 } from "@/components/ai-elements/prompt-input";
+import { useChatStore } from "@/stores/useChatStore";
 
 interface ChatInputProps {
+  chatId?: string;
   chatMessages: ChatMessage[];
   setChatMessages: (newChatMessages: ChatMessage[]) => void;
   files?: File[];
 }
 
-function ChatInput({ chatMessages, setChatMessages, files }: ChatInputProps) {
+function ChatInput({ chatId, chatMessages, setChatMessages, files }: ChatInputProps) {
   const [inputText, setInputText] = useState<string>("");
   const promptController = usePromptInputController();
   const initialisedRef = useRef(false);
+  const navigate = useNavigate();
+  const createChat = useChatStore((s) => s.createChat);
 
   useEffect(() => {
     if (files && files.length > 0 && !initialisedRef.current) {
@@ -34,7 +39,7 @@ function ChatInput({ chatMessages, setChatMessages, files }: ChatInputProps) {
     }
   }, [files, promptController.attachments]);
 
-  function sendMessage(message: PromptInputMessage) {
+  async function sendMessage(message: PromptInputMessage) {
     const hasText = Boolean(message.text);
     const hasAttachments = Boolean(message.files?.length);
 
@@ -75,6 +80,14 @@ Simple Table:
 | Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 |`,
       },
     ]);
+
+    // Create a backend chat only when first sending in a new chat
+    if (!chatId || chatId === "new-chat") {
+      const chat = await createChat("Chat");
+      if (chat?.id) {
+        navigate(`/chats/${chat.id}`, { replace: true });
+      }
+    }
 
     setInputText("");
   }

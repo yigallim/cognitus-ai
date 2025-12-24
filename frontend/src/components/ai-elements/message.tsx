@@ -5,7 +5,15 @@ import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { FileUIPart, UIMessage } from "ai";
-import { ChevronLeftIcon, ChevronRightIcon, File, FileJson, FileSpreadsheet, FileText, XIcon } from "lucide-react";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  File,
+  FileJson,
+  FileSpreadsheet,
+  FileText,
+  XIcon,
+} from "lucide-react";
 import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
 import { createContext, memo, useContext, useEffect, useState } from "react";
 import { Streamdown } from "streamdown";
@@ -19,7 +27,7 @@ export type MessageProps = HTMLAttributes<HTMLDivElement> & {
 export const Message = ({ className, from, ...props }: MessageProps) => (
   <div
     className={cn(
-      "group flex w-full max-w-[80%] flex-col gap-2 min-w-0 overflow-hidden",
+      "group flex w-full max-w-[80%] lg:max-w-[68%] flex-col gap-2 min-w-0 overflow-hidden",
       from === "user" ? "is-user ml-auto justify-end" : "is-assistant",
       className
     )}
@@ -285,8 +293,8 @@ const customComponents = {
 
     // Parse table structure
     if (tableNode && tableNode.children) {
-      const thead = tableNode.children.find((child: any) => child.tagName === 'thead');
-      const tbody = tableNode.children.find((child: any) => child.tagName === 'tbody');
+      const thead = tableNode.children.find((child: any) => child.tagName === "thead");
+      const tbody = tableNode.children.find((child: any) => child.tagName === "tbody");
 
       if (thead && thead.children && thead.children[0]) {
         const headerRow = thead.children[0];
@@ -313,13 +321,13 @@ const customComponents = {
     }
 
     function extractText(node: any): string {
-      if (!node) return '';
-      if (node.type === 'text') return node.value || '';
+      if (!node) return "";
+      if (node.type === "text") return node.value || "";
       if (node.value) return node.value;
       if (node.children) {
-        return node.children.map(extractText).join('');
+        return node.children.map(extractText).join("");
       }
-      return '';
+      return "";
     }
 
     return (
@@ -329,14 +337,22 @@ const customComponents = {
     );
   },
   img: ({ node, className, ...props }: any) => {
-    const alt = node.properties?.alt || 'Image';
-    const src = node.properties?.src || '';
+    const alt = node.properties?.alt || "Image";
+    const src = node.properties?.src || "";
 
     return (
-      <ImageOutput currentItem={{ type: 'image', content: src, title: alt }} className={className} {...props} />
+      <ImageOutput
+        currentItem={{ type: "image", content: src, title: alt }}
+        className={className}
+        {...props}
+      />
     );
   },
-  p: ({ children, ...props }: any) => <p className="mb-2 last:mb-0" {...props}>{children}</p>,
+  p: ({ children, ...props }: any) => (
+    <p className="mb-2 last:mb-0" {...props}>
+      {children}
+    </p>
+  ),
 };
 
 export const MessageResponse = memo(
@@ -385,8 +401,8 @@ export function MessageAttachment({ data, className, onRemove, ...props }: Messa
         return FileText;
       default:
         return File;
-    };
-  }
+    }
+  };
   const AttachmentIcon = getAttachmentIcon(filename);
 
   return (
