@@ -23,7 +23,7 @@ function AppRoutes() {
         path="/"
         element={
           <ProtectedRoute>
-            <ChatsPage chatId="new-chat" initialMessages={[]} />
+            <ChatsPage chatId="new-chat" initialMessages={[]} image_dict={{}}/>
           </ProtectedRoute>
         }
       />

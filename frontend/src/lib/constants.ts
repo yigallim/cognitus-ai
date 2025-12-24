@@ -60,7 +60,15 @@ const chatHistory1: ChatMessage[] = [
 - **useState** - for managing component state
 - **useEffect** - for side effects like data fetching
 - **useContext** - for consuming context values
-- **useRef** - for accessing DOM element`,
+- **useRef** - for accessing DOM element
+\`\`\`sql
+SELECT customers.name, orders.order_date, orders.total_amount
+FROM customers
+JOIN orders ON customers.id = orders.customer_id
+WHERE orders.total_amount > 100
+ORDER BY orders.order_date DESC;
+\`\`\`
+`
   },
 ];
 const chatHistory2: ChatMessage[] = [
@@ -82,13 +90,14 @@ labelled_df = pd.read_csv('labelled.csv', encoding='ascii')
 print(labelled_df.head())
 print(labelled_df.describe(include='all'))
 \`\`\`
+\nImage using dictionary:\n
+<image-tag>xbl9ls3909txdouu</image-tag>
 Simple Table:
 | Header 1 | Header 2 | Header 3 | Header 3 |
 |---|---|---|---|
 | Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 | Row 1, Col 4 |
 | Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 |
 \n\nAnd here is an image:\n\n
-<image-tag>xbl9ls3909txdouu</image-tag>
 ![Image](https://i.postimg.cc/Mp3ZXpdm/image.png)`,
   },
 ];
@@ -164,7 +173,7 @@ mean_fare_rounded`,
     role: "function",
     name: "run_code",
     belongsTo: "3",
-    output: `{ "[text]-2573c8b1": "34.65", 
+    output: `{ "[text]-2573c8b1": "34.65", "[image]-2573c8b2": "xbl9ls3909txdouu",
     "[table]-2573c8b1": {
     "columns": [
       "Header 1", "Header 2", "Header 3", "Header 4", "Header 5", "Header 6",
@@ -184,7 +193,7 @@ mean_fare_rounded`,
       ["5", "0", "3", "Allen, Mr. William Henry", "male", "35.0", "0", "0", "373450", "8.05", "NaN", "S", "4cb9bafe-0b77-40d6-9efe-00b44f07f478.ipynb"]
     ]
   }, 
-    "[image]-2573c8b1": "https://i.postimg.cc/Mp3ZXpdm/image.png" }`,
+    "[image]-2573c8b1": "https://i.postimg.cc/Mp3ZXpdm/image.png" }`
   },
   {
     id: "6",

@@ -16,8 +16,13 @@ import ExpandedCodeBlock, { type CodeOutput } from "./ExpandedCodeBlock";
 import type { ChatMessage } from "@/lib/constants";
 import { CopyButton } from "@/components/CopyButton";
 import { cn } from "@/lib/utils";
+import ImageOutput from "@/components/ImageOutput";
 
-function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: ChatMessage[] }) {
+type InlinePart =
+  | { type: "text"; content: string }
+  | { type: "image"; id: string };
+
+function ChatMessages({ chatId, chatMessages, image_dict }: { chatId: string; chatMessages: ChatMessage[]; image_dict: Record<string, string> }) {
   const { scrollToBottom } = useStickToBottomContext();
 
   useEffect(() => {
@@ -27,7 +32,9 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
 
     return () => clearTimeout(timer);
   }, [chatMessages]);
+
   console.log("chatMessages", chatMessages);
+
   const getOutputs = (id: string): CodeOutput[] => {
     const outputMessage = chatMessages.find((m) => m.role === "function" && m.belongsTo === id);
 
@@ -43,9 +50,9 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
         } else if (key.startsWith("[text]")) {
           outputs.push({ type: "text", content: outputData[key] });
         } else if (key.startsWith("[image]")) {
-          outputs.push({ type: "image", content: outputData[key] });
+          outputs.push({ type: "image", content: image_dict[outputData[key]] ?? outputData[key] });
         } else if (key.startsWith("[chart]")) {
-          outputs.push({ type: "chart", content: outputData[key] });
+          outputs.push({ type: "chart", content: image_dict[outputData[key]] ?? outputData[key] });
         }
       });
       return outputs;
@@ -53,6 +60,45 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
       console.error("Failed to parse output JSON", e);
       return [];
     }
+  };
+
+  const parseInlineContent = (content: string): InlinePart[] => {
+    const IMAGE_TAG_REGEX = /<image-tag>(.*?)<\/image-tag>/g;
+    const parts: InlinePart[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = IMAGE_TAG_REGEX.exec(content)) !== null) {
+      const start = match.index;
+      const end = IMAGE_TAG_REGEX.lastIndex;
+      const imageId = match[1];
+
+      // text before image tag
+      if (start > lastIndex) {
+        parts.push({
+          type: "text",
+          content: content.slice(lastIndex, start),
+        });
+      }
+
+      // image token
+      parts.push({
+        type: "image",
+        id: imageId,
+      });
+
+      lastIndex = end;
+    }
+
+    // remaining text after last image
+    if (lastIndex < content.length) {
+      parts.push({
+        type: "text",
+        content: content.slice(lastIndex),
+      });
+    }
+
+    return parts;
   };
 
   const isLastAssistantInBlock = (index: number): boolean => {
@@ -129,6 +175,7 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
             );
           }
 
+          const parts = parseInlineContent(chatMessage.content || "");
           const isAssistant = chatMessage.role === "assistant";
           const isLastAssist = isAssistant && isLastAssistantInBlock(index);
 
@@ -143,7 +190,21 @@ function ChatMessages({ chatId, chatMessages }: { chatId: string; chatMessages: 
               )}
 
               <MessageContent>
-                {chatMessage.content && <MessageResponse>{chatMessage.content}</MessageResponse>}
+                {parts.map((part, idx) => {
+                  if (part.type === "text") {
+                    return (
+                      <MessageResponse key={`${key}-part-${idx}`}>
+                        {part.content}
+                      </MessageResponse>
+                    );
+                  }
+
+                  if (part.type === "image") {
+                    return (
+                      <ImageOutput key={`${key}-part-${idx}`} currentItem={{ type: 'image', content: image_dict[part.id], title: 'Image' }} />
+                    );
+                  }
+                })}
               </MessageContent>
 
               <div className={cn("flex items-center mb-0 pb-0 gap-2", isAssistant && isLastAssist ? "" : "ml-auto")}>

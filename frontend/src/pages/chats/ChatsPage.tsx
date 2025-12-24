@@ -38,7 +38,7 @@ function ChatsPage({
       {messages.length > 0 ? (
         <>
           <Conversation>
-            <ChatMessages chatId={chatId} chatMessages={messages} />
+            <ChatMessages chatId={chatId} chatMessages={messages} image_dict={image_dict} />
           </Conversation>
         </>
       ) : (
