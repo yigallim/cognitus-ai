@@ -18,11 +18,17 @@ import { CopyButton } from "@/components/CopyButton";
 import { cn } from "@/lib/utils";
 import ImageOutput from "@/components/ImageOutput";
 
-type InlinePart =
-  | { type: "text"; content: string }
-  | { type: "image"; id: string };
+type InlinePart = { type: "text"; content: string } | { type: "image"; id: string };
 
-function ChatMessages({ chatId, chatMessages, image_dict }: { chatId: string; chatMessages: ChatMessage[]; image_dict: Record<string, string> }) {
+function ChatMessages({
+  chatId,
+  chatMessages,
+  image_dict,
+}: {
+  chatId: string;
+  chatMessages: ChatMessage[];
+  image_dict: Record<string, string>;
+}) {
   const { scrollToBottom } = useStickToBottomContext();
 
   useEffect(() => {
@@ -43,18 +49,40 @@ function ChatMessages({ chatId, chatMessages, image_dict }: { chatId: string; ch
     try {
       const outputData = JSON.parse(outputMessage.output);
       const outputs: CodeOutput[] = [];
+      // New format support: { text: string[], image: string[], table: TableData[] }
+      const hasNewFormat =
+        outputData &&
+        (Array.isArray(outputData.text) ||
+          Array.isArray(outputData.image) ||
+          Array.isArray(outputData.table));
 
-      Object.keys(outputData).forEach((key) => {
-        if (key.startsWith("[table]")) {
-          outputs.push({ type: "table", content: outputData[key] });
-        } else if (key.startsWith("[text]")) {
-          outputs.push({ type: "text", content: outputData[key] });
-        } else if (key.startsWith("[image]")) {
-          outputs.push({ type: "image", content: image_dict[outputData[key]] ?? outputData[key] });
-        } else if (key.startsWith("[chart]")) {
-          outputs.push({ type: "chart", content: image_dict[outputData[key]] ?? outputData[key] });
+      if (hasNewFormat) {
+        if (Array.isArray(outputData.text)) {
+          outputData.text.forEach((t: string) => outputs.push({ type: "text", content: t }));
         }
-      });
+        if (Array.isArray(outputData.image)) {
+          outputData.image.forEach((img: string) =>
+            outputs.push({ type: "image", content: image_dict[img] ?? img })
+          );
+        }
+        if (Array.isArray(outputData.table)) {
+          outputData.table.forEach((tbl: any) => outputs.push({ type: "table", content: tbl }));
+        }
+        return outputs;
+      }
+
+      // Legacy format fallback using key prefixes
+      // Object.keys(outputData).forEach((key) => {
+      //   if (key.startsWith("[table]")) {
+      //     outputs.push({ type: "table", content: outputData[key] });
+      //   } else if (key.startsWith("[text]")) {
+      //     outputs.push({ type: "text", content: outputData[key] });
+      //   } else if (key.startsWith("[image]")) {
+      //     outputs.push({ type: "image", content: image_dict[outputData[key]] ?? outputData[key] });
+      //   } else if (key.startsWith("[chart]")) {
+      //     outputs.push({ type: "chart", content: image_dict[outputData[key]] ?? outputData[key] });
+      //   }
+      // });
       return outputs;
     } catch (e) {
       console.error("Failed to parse output JSON", e);
@@ -99,6 +127,10 @@ function ChatMessages({ chatId, chatMessages, image_dict }: { chatId: string; ch
     }
 
     return parts;
+  };
+
+  const sanitizeUserContent = (content: string): string => {
+    return content.replace(/^\[USER INSTRUCTION\]:\s*/, "");
   };
 
   const isLastAssistantInBlock = (index: number): boolean => {
@@ -156,6 +188,11 @@ function ChatMessages({ chatId, chatMessages, image_dict }: { chatId: string; ch
 
             const outputs = getOutputs(chatMessage.id);
             const code = chatMessage.function_call.content;
+            // Support both correctly spelled "explanation" and commonly misspelled "explaination"
+            const codeExplanation =
+              (chatMessage.function_call as any).explanation ??
+              (chatMessage.function_call as any).explaination ??
+              "";
             const showCopyBar = isLastAssistantInBlock(index);
 
             return (
@@ -165,13 +202,16 @@ function ChatMessages({ chatId, chatMessages, image_dict }: { chatId: string; ch
                     title={isPythonCode ? "Code" : isExport ? "Export as CSV" : "SQL Query"}
                     language={isPythonCode ? "python" : "MySQL"}
                     code={code}
-                    codeExplanation={chatMessage.function_call.explanation}
+                    codeExplanation={codeExplanation}
                     outputs={outputs}
                   />
                 </MessageContent>
                 {showCopyBar && (
                   <div className="flex items-center mb-0 pb-0 gap-2">
-                    <CopyButton onCopy={() => copyAssistantBlock(index)} tooltip="Copy to clipboard" />
+                    <CopyButton
+                      onCopy={() => copyAssistantBlock(index)}
+                      tooltip="Copy to clipboard"
+                    />
                     <span className="text-gray-500 text-xs align-middle">{time}</span>
                   </div>
                 )}
@@ -179,7 +219,10 @@ function ChatMessages({ chatId, chatMessages, image_dict }: { chatId: string; ch
             );
           }
 
-          const parts = parseInlineContent(chatMessage.content || "");
+          const rawContent = chatMessage.content || "";
+          const parts = parseInlineContent(
+            chatMessage.role === "user" ? sanitizeUserContent(rawContent) : rawContent
+          );
           const isAssistant = chatMessage.role === "assistant";
           const isLastAssist = isAssistant && isLastAssistantInBlock(index);
 
@@ -197,30 +240,48 @@ function ChatMessages({ chatId, chatMessages, image_dict }: { chatId: string; ch
                 {parts.map((part, idx) => {
                   if (part.type === "text") {
                     return (
-                      <MessageResponse key={`${key}-part-${idx}`}>
-                        {part.content}
-                      </MessageResponse>
+                      <MessageResponse key={`${key}-part-${idx}`}>{part.content}</MessageResponse>
                     );
                   }
 
                   if (part.type === "image") {
                     return (
-                      <ImageOutput key={`${key}-part-${idx}`} currentItem={{ type: 'image', content: image_dict[part.id], title: 'Image' }} />
+                      <ImageOutput
+                        key={`${key}-part-${idx}`}
+                        currentItem={{
+                          type: "image",
+                          content: image_dict[part.id],
+                          title: "Image",
+                        }}
+                      />
                     );
                   }
                 })}
               </MessageContent>
 
-              <div className={cn("flex items-center mb-0 pb-0 gap-2", isAssistant && isLastAssist ? "" : "ml-auto")}>
+              <div
+                className={cn(
+                  "flex items-center mb-0 pb-0 gap-2",
+                  isAssistant && isLastAssist ? "" : "ml-auto"
+                )}
+              >
                 {isAssistant && isLastAssist && (
                   <>
-                    <CopyButton onCopy={() => copyAssistantBlock(index)} tooltip="Copy to clipboard" />
+                    <CopyButton
+                      onCopy={() => copyAssistantBlock(index)}
+                      tooltip="Copy to clipboard"
+                    />
                     <span className="text-gray-500 text-xs align-middle">{time}</span>
                   </>
                 )}
 
                 {chatMessage.role === "user" && chatMessage.content && (
-                  <CopyButton onCopy={() => navigator.clipboard.writeText(chatMessage.content!)} tooltip="Copy to clipboard" />
+                  <CopyButton
+                    onCopy={() =>
+                      navigator.clipboard.writeText(sanitizeUserContent(chatMessage.content!))
+                    }
+                    tooltip="Copy to clipboard"
+                  />
                 )}
               </div>
             </Message>

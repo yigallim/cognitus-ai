@@ -40,8 +40,8 @@ def _process_history(history: List[dict[str, Any]]) -> List[dict[str, Any]]:
             belongs_to = processed[-1]["id"] if processed else ""
 
             output_dict = {
-                "[text]-12345678": msg.content,
-                "[image]-2d0c2b2b":  "https://plus.unsplash.com/premium_photo-1664474619075-644dd191935f?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8aW1hZ2V8ZW58MHx8MHx8fDA%3D"
+                "text": [msg.content],
+                "image":  ["https://plus.unsplash.com/premium_photo-1664474619075-644dd191935f?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8aW1hZ2V8ZW58MHx8MHx8fDA%3D"]
             }
             
             processed.append({
@@ -52,13 +52,28 @@ def _process_history(history: List[dict[str, Any]]) -> List[dict[str, Any]]:
             })
 
         elif role == "assistant" and msg_type == "tool_call":
-            action = parse_action(msg.content)
+            action = parse_action(msg.content) or {}
+            if action.get("action") == "task_fulfill":
+                continue
+            action_name = action.get("action", "execute_code")
+            parameters = action.get("parameters", {}) or {}
+            # Choose content based on action type
+            if action_name == "execute_code":
+                selected_content = parameters.get("code", "")
+            elif action_name == "execute_sql_query":
+                selected_content = parameters.get("sql_query", "")
+            elif action_name == "export_as_csv":
+                selected_content = parameters.get("sql_query", "")
+            else:
+                # Fallback to code, then sql_query
+                selected_content = parameters.get("code", "") or parameters.get("sql_query", "")
             processed.append({
                 "id": msg.id,
                 "role": msg.role,
                 "function_call": {
-                    "name": (action or {}).get("action", "execute_code"),
-                    "content": (action or {}).get("parameters", {}).get("code", ""),
+                    "name": action_name,
+                    "content": selected_content,
+                    "explaination": action.get("explaination", ""),
                 },
             })
 
@@ -101,7 +116,9 @@ async def get_chat(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Chat not found"
         )
-    return chat
+    chat_dict = chat.model_dump()
+    chat_dict["history"] = _process_history(chat.history)
+    return Chat(**chat_dict)
 
 @router.patch("/{chat_id}", response_model=Chat)
 async def rename_chat(
