@@ -25,7 +25,7 @@ function ChatsPage({
   const [seenIds, setSeenIds] = useState<Set<string>>(
     () => new Set((initialMessages ?? []).map((m) => m.id))
   );
-
+  console.log("messages", messages);
   // Use chat store instead of external chat hook
   const fetchChats = useChatStore((state) => state.fetchChats);
   useEffect(() => {
@@ -33,11 +33,24 @@ function ChatsPage({
   }, [fetchChats]);
 
   useEffect(() => {
-    if (messages.length === 0 && initialMessages?.length) {
-      setMessages(initialMessages);
-      setSeenIds(new Set(initialMessages.map((m) => m.id)));
+    if (initialMessages && initialMessages.length > 0) {
+      setMessages((prev) => {
+        // Create a map of existing IDs to avoid duplicates
+        const existingIds = new Set(prev.map((m) => m.id));
+        // Filter out messages from history that we already have in state
+        const newHistory = initialMessages.filter((m) => !existingIds.has(m.id));
+
+        // Combine them (History usually comes first)
+        return [...newHistory, ...prev];
+      });
+
+      setSeenIds((prev) => {
+        const next = new Set(prev);
+        initialMessages.forEach((m) => next.add(m.id));
+        return next;
+      });
     }
-  }, [initialMessages, messages.length, setMessages]);
+  }, [initialMessages]);
 
   // Helper: transform file_map to absolute URLs
   const transformFileMap = (map: Record<string, string>): Record<string, string> => {
@@ -139,6 +152,7 @@ function ChatsPage({
           if (normalized) {
             setMessages((prev) => {
               if (prev.some((m) => m.id === normalized!.id)) return prev;
+
               return [...prev, normalized!];
             });
 
@@ -174,7 +188,9 @@ function ChatsPage({
 
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            break;
+          }
           if (!value) continue;
           const chunk = decoder.decode(value, { stream: true });
           buffer += chunk;
@@ -182,9 +198,7 @@ function ChatsPage({
           buffer = frames.pop() ?? ""; // keep incomplete
           for (const f of frames) handleFrame(f);
         }
-      } catch {
-        // Network error or aborted; ignore
-      }
+      } catch (e) {}
     };
 
     start();
@@ -213,7 +227,9 @@ function ChatsPage({
             <ChatInput
               chatId={chatId}
               chatMessages={messages}
-              setChatMessages={setMessages}
+              setChatMessages={(newVal) => {
+                setMessages(newVal);
+              }}
               newChat={false}
             />
           </PromptInputProvider>
@@ -230,7 +246,9 @@ function ChatsPage({
                 <ChatInput
                   chatId={chatId}
                   chatMessages={messages}
-                  setChatMessages={setMessages}
+                  setChatMessages={(newVal) => {
+                    setMessages(newVal);
+                  }}
                   files={fileState}
                   newChat={true}
                 />

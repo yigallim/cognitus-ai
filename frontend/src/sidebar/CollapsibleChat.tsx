@@ -66,7 +66,6 @@ function CollapsibleChat({ item, location }: CollapsibleChatProps) {
   const filteredChats = item.items?.filter((chat) =>
     chat.title.toLowerCase().includes(searchText.toLowerCase())
   );
-  console.log("isChatPath", isChatPath);
   return (
     <Collapsible
       key={item.title}

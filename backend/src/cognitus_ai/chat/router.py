@@ -6,8 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.responses import StreamingResponse
 
 from cognitus_ai.utils.parse_action import parse_action
+from cognitus_ai.utils.nanoid import generate_id
 from .schemas import AssistantMessage, Chat, ChatCreate, ChatUpdate, SystemMessage, UserMessage
 from .repository import chat_repository
+from .service import forward_request_to_agent
 from ..auth.dependencies import get_current_user
 from ..auth.schemas import User
 from ..database import redis_client
@@ -37,10 +39,19 @@ def _process_history(history: List[dict[str, Any]]) -> List[dict[str, Any]]:
             continue
 
         if role == "user" and msg_type == "instruction":
+            content = msg.content or ""
+            # Remove specific prefixes/markers and trim
+            for phrase in [
+                "[USER INSTRUCTION]:",
+                "[THIS IS AN OLD INSTRUCTION, NOT THE LATEST ONE]",
+            ]:
+                content = content.replace(phrase, "")
+            content = content.strip()
+
             processed.append({
                 "id": msg.id,
                 "role": msg.role,
-                "content": msg.content,
+                "content": content,
             })
 
         elif role == "user" and msg_type == "tool_result":
@@ -100,7 +111,17 @@ async def create_chat(
     current_user: Annotated[User, Depends(get_current_user)]
 ):
     instruction = chat_in.user_instruction or ""
-    return await chat_repository.create(current_user.email, instruction, chat_in)
+    chat = await chat_repository.create(current_user.email, instruction, chat_in)
+
+    # Also forward to local agent; don't fail creation on upstream errors
+    try:
+        if instruction:
+            await forward_request_to_agent(str(chat.id), instruction)
+    except Exception:
+        # Intentionally swallow errors here; chat creation should succeed regardless
+        pass
+
+    return chat
 
 @router.get("/", response_model=List[Chat])
 async def list_chats(
@@ -140,24 +161,30 @@ async def forward_to_local_agent(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Chat not found"
         )
+    if len(chat.history or []) != 0:
+        await chat_repository.add_message(
+            chat_id,
+            current_user.email,
+            {
+                "id": generate_id(),
+                "role": "user",
+                "content": "[USER INSTRUCTION]: " + body.user_instruction,
+                "type": "instruction",
+            },
+        )
 
     payload = {
         "user_instruction": body.user_instruction,
         "session_id": chat_id,
     }
-
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            resp = await client.post("http://localhost:9090/chat", json=payload)
-            resp.raise_for_status()
+        resp_json = await forward_request_to_agent(chat_id, body.user_instruction)
     except httpx.HTTPStatusError as e:
-        # Bubble up upstream status codes with response body
         raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
     except httpx.RequestError as e:
-        # Network or connection errors
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Failed to reach upstream: {e}")
 
-    return resp.json()
+    return resp_json
 
 @router.get("/{chat_id}/stream")
 async def stream_chat_history_sse(

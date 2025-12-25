@@ -33,6 +33,7 @@ function ChatInput({ chatId, chatMessages, setChatMessages, newChat, files }: Ch
   const initialisedRef = useRef(false);
   const navigate = useNavigate();
   const createChat = useChatStore((s) => s.createChat);
+  const fetchChats = useChatStore((state) => state.fetchChats);
 
   useEffect(() => {
     if (files && files.length > 0 && !initialisedRef.current) {
@@ -71,21 +72,22 @@ function ChatInput({ chatId, chatMessages, setChatMessages, newChat, files }: Ch
         targetChatId = chat.id;
         navigate(`/chats/${chat.id}`, { replace: true });
       }
+    } else {
+      try {
+        // If we just created the chat and already passed instruction, avoid double-sending
+        if (targetChatId) {
+          await sendAgentInstruction(targetChatId, {
+            user_instruction: message.text ?? "",
+          });
+        }
+      } catch (e) {
+        // TODO: surface error to user via toast
+        console.error("Failed to send instruction to agent", e);
+      }
     }
 
     // Send the instruction to the agent endpoint
-    try {
-      // If we just created the chat and already passed instruction, avoid double-sending
-      if (targetChatId) {
-        await sendAgentInstruction(targetChatId, {
-          user_instruction: message.text ?? "",
-        });
-      }
-    } catch (e) {
-      // TODO: surface error to user via toast
-      console.error("Failed to send instruction to agent", e);
-    }
-
+    fetchChats();
     setInputText("");
   }
 

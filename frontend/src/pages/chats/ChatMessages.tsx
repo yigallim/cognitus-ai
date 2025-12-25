@@ -42,8 +42,6 @@ function ChatMessages({
     return () => clearTimeout(timer);
   }, [chatMessages]);
 
-  console.log("chatMessages", chatMessages);
-
   const getOutputs = (id: string): CodeOutput[] => {
     const outputMessage = chatMessages.find((m) => m.role === "function" && m.belongsTo === id);
 
@@ -130,10 +128,6 @@ function ChatMessages({
     }
 
     return parts;
-  };
-
-  const sanitizeUserContent = (content: string): string => {
-    return content.replace(/^\[USER INSTRUCTION\]:\s*/, "");
   };
 
   const isLastAssistantInBlock = (index: number): boolean => {
@@ -223,9 +217,7 @@ function ChatMessages({
           }
 
           const rawContent = chatMessage.content || "";
-          const parts = parseInlineContent(
-            chatMessage.role === "user" ? sanitizeUserContent(rawContent) : rawContent
-          );
+          const parts = parseInlineContent(chatMessage.role === "user" ? rawContent : rawContent);
           const isAssistant = chatMessage.role === "assistant";
           const isLastAssist = isAssistant && isLastAssistantInBlock(index);
 
@@ -284,9 +276,7 @@ function ChatMessages({
 
                   {chatMessage.role === "user" && chatMessage.content && (
                     <CopyButton
-                      onCopy={() =>
-                        navigator.clipboard.writeText(sanitizeUserContent(chatMessage.content!))
-                      }
+                      onCopy={() => navigator.clipboard.writeText(chatMessage.content!)}
                       tooltip="Copy to clipboard"
                     />
                   )}

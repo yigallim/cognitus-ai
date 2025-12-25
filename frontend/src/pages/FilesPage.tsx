@@ -191,7 +191,6 @@ function FilesPage() {
   const handleChatWithFiles = () => {
     const selectedIds = Object.keys(selected).filter((id) => selected[id]);
     const selectedFiles = files.filter((f) => selectedIds.includes(f.id));
-    console.log("selectedFiles", selectedFiles);
     navigate("/", {
       state: {
         mode: "chat-with-files",
