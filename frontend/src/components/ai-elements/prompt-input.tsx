@@ -826,46 +826,53 @@ export const PromptInputTextarea = ({
   const [cursorIndex, setCursorIndex] = useState<number>(-1);
   const [activeIndex, setActiveIndex] = useState<number>(0);
 
+  const isDatabaseAttached = useMemo(() =>
+    attachments.files.some((f) => f.mediaType === 'application/vnd.database'),
+    [attachments.files]
+  );
+
   // -- Fetch Real Files --
-  const { data: files = [] } = useQuery({
-    queryKey: ["files"],
-    queryFn: fetchFiles,
-    staleTime: 1000 * 60 * 5, // Cache for 5 mins
-    enabled: mentionQuery !== null, // Only fetch/active when typing mention 
-  });
+  // const { data: files = [] } = useQuery({
+  //   queryKey: ["files"],
+  //   queryFn: fetchFiles,
+  //   staleTime: 1000 * 60 * 5, // Cache for 5 mins
+  //   enabled: mentionQuery !== null, // Only fetch/active when typing mention 
+  // });
   const { connections } = useConnections();
 
-  // -- Calculate Suggestions (Real Files + Mock DBs) --
+  // -- Calculate Suggestions --
   const suggestions = useMemo(() => {
     if (mentionQuery === null) return [];
 
     const lowerQuery = mentionQuery.toLowerCase();
 
     // Transform Backend Files to MentionItems
-    const fileItems: MentionItem[] = files
-      .filter((f: any) => f.filename.toLowerCase().includes(lowerQuery))
-      .map((f: any) => ({
-        id: f.id,
-        name: f.filename,
-        type: "file",
-        category: "Files",
-        originalData: f
-      }));
+    // const fileItems: MentionItem[] = files
+    //   .filter((f: any) => f.filename.toLowerCase().includes(lowerQuery))
+    //   .map((f: any) => ({
+    //     id: f.id,
+    //     name: f.filename,
+    //     type: "file",
+    //     category: "Files",
+    //     originalData: f
+    //   }));
 
     // Filter Databases
     const database: MentionItem[] = connections.map(conn => ({
       id: conn.id,
       name: conn.connectionName,
       type: conn.type,
-      category: "Databases"
+      category: "Databases",
+      originalData: conn
     }));
 
     const dbItems = database.filter((db) =>
       db.name.toLowerCase().includes(lowerQuery)
     );
+    return dbItems;
 
     // Return combined list (Files first)
-    return [...fileItems, ...dbItems];
+    // return [...fileItems, ...dbItems];
   }, [mentionQuery]);
 
   // Reset active index when query changes
@@ -901,18 +908,17 @@ export const PromptInputTextarea = ({
       onChange?.({ target: textarea, currentTarget: textarea } as any);
     }
 
-    // Add Attachment (** Pending modified)
-    if (item.type === 'file') {
-      // Pass the object structure. PromptInputProvider handles objects with 'id' 
-      // by generating the /api/files/download/{id} URL automatically.
-      attachments.add([{
-        id: item.id,
-        name: item.name,
-        filename: item.name,
-        type: item.originalData?.content_type
-      }] as any);
-    } else {
-      // For Databases (Mock) - Virtual File
+    // Add Attachment 
+    // if (item.type === 'file') {
+    //   attachments.add([{
+    //     id: item.id,
+    //     name: item.name,
+    //     filename: item.name,
+    //     type: item.originalData?.content_type
+    //   }] as any);
+    // } else {
+    if (item.category === 'Databases') {
+      // For Databases - Virtual File
       const virtualFile = new File(
         [""],
         item.name,
@@ -983,27 +989,35 @@ export const PromptInputTextarea = ({
   };
 
   const handleInput: ChangeEventHandler<HTMLTextAreaElement> = (e) => {
+    if (isDatabaseAttached) {
+      setMentionQuery(null);
+      setCursorIndex(-1);
+    }
+
     const value = e.currentTarget.value;
     const selectionStart = e.currentTarget.selectionStart;
 
-    // Detect "@" logic
-    const lastAtPos = value.lastIndexOf("@", selectionStart - 1);
-    if (lastAtPos !== -1) {
-      const isStart = lastAtPos === 0;
-      const isPrecededBySpace = value[lastAtPos - 1] === " "; // e.g. "hello @file"
+    if (!isDatabaseAttached) {
+      // Detect "@" logic
+      const lastAtPos = value.lastIndexOf("@", selectionStart - 1);
+      if (lastAtPos !== -1) {
+        const isStart = lastAtPos === 0;
+        const isPrecededBySpace = value[lastAtPos - 1] === " "; // e.g. "hello @file"
 
-      if (isStart || isPrecededBySpace) {
-        const query = value.substring(lastAtPos + 1, selectionStart);
-        // Stop mention if user types a space (e.g. "@file na...")
-        if (!query.includes(" ")) {
-          setMentionQuery(query);
-          setCursorIndex(lastAtPos);
-          return;
+        if (isStart || isPrecededBySpace) {
+          const query = value.substring(lastAtPos + 1, selectionStart);
+          // Stop mention if user types a space (e.g. "@file na...")
+          if (!query.includes(" ")) {
+            setMentionQuery(query);
+            setCursorIndex(lastAtPos);
+            return;
+          }
         }
       }
     }
     setMentionQuery(null);
     setCursorIndex(-1);
+
   };
 
   const handlePaste: ClipboardEventHandler<HTMLTextAreaElement> = (event) => {

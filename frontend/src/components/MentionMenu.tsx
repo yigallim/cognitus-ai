@@ -7,7 +7,7 @@ export type MentionItem = {
     name: string;
     type: "file" | "database" | string;
     category: "Files" | "Databases";
-    originalData?: any; // store original file object for real files
+    originalData?: any; // store original object for real files / db info
 };
 
 interface MentionsMenuProps {
