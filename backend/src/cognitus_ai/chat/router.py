@@ -165,32 +165,31 @@ async def stream_chat_history_sse(
     request: Request,
     current_user: Annotated[User, Depends(get_current_user)]
 ):
-    """Stream chat history events from Redis Stream as SSE.
-
-    Uses Redis Stream at key `stream:{chat_id}:history` and emits each
-    entry's `data` field (JSON string) as the SSE `data` payload.
-    """
-
-    # Validate chat ownership/access
     chat = await chat_repository.get_by_id(chat_id, current_user.email)
     if not chat:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found")
 
-    stream_key = f"stream:{chat_id}:history"
-    last_id: str = "0"
+    history_key = f"stream:{chat_id}:history"
+    status_key = f"stream:{chat_id}:status"
+    
+    # We track last IDs for both streams
+    last_ids = {
+        history_key: "0",
+        status_key: "0"
+    }
 
-    # Maintain context by starting with the existing chat history
     history_buffer: List[dict[str, Any]] = list(chat.history or [])
     processed_len: int = len(_process_history(history_buffer))
 
     async def event_generator():
-        nonlocal last_id, processed_len
+        nonlocal processed_len
         while True:
             if await request.is_disconnected():
                 break
 
             try:
-                events = await redis_client.xread({stream_key: last_id}, block=2000)
+                # Read from both streams
+                events = await redis_client.xread(last_ids, block=2000) # type: ignore
             except Exception as e:
                 yield f"event: error\ndata: {json.dumps({'error': str(e)})}\n\n"
                 break
@@ -198,34 +197,39 @@ async def stream_chat_history_sse(
             if not events:
                 continue
 
-            for _, messages in events:
+            for stream_name, messages in events:
                 for msg_id, payload in messages:
                     raw_json = payload.get("data")
-                    if raw_json:
-                        try:
-                            msg_dict = json.loads(raw_json)
-                        except Exception:
-                            # If payload is already a dict or malformed, skip gracefully
-                            msg_dict = payload.get("data") if isinstance(payload.get("data"), dict) else None
+                    if not raw_json:
+                        continue
+                    
+                    try:
+                        data_dict = json.loads(raw_json)
+                    except Exception:
+                        continue
 
-                        if isinstance(msg_dict, dict):
-                            # Append new message to the history buffer for contextual processing
-                            history_buffer.append(msg_dict)
-                            processed_now = _process_history(history_buffer)
-                            new_items = processed_now[processed_len:]
+                    # Handle History Stream
+                    if stream_name == history_key:
+                        history_buffer.append(data_dict)
+                        processed_now = _process_history(history_buffer)
+                        new_items = processed_now[processed_len:]
 
-                            for item in new_items:
-                                # Stream processed item as SSE
-                                yield f"id: {msg_id}\nevent: message\ndata: {json.dumps(item)}\n\n"
+                        for item in new_items:
+                            yield f"id: {msg_id}\nevent: message\ndata: {json.dumps(item)}\n\n"
+                        
+                        processed_len = len(processed_now)
+                    
+                    # Handle Status Stream
+                    elif stream_name == status_key:
+                        yield f"id: {msg_id}\nevent: status\ndata: {json.dumps(data_dict)}\n\n"
 
-                            processed_len = len(processed_now)
-
-                    last_id = msg_id
+                    # Update the last ID for this specific stream
+                    last_ids[stream_name] = msg_id
 
     headers = {
         "Cache-Control": "no-cache",
         "Connection": "keep-alive",
-        "X-Accel-Buffering": "no"  # Disable buffering on some proxies
+        "X-Accel-Buffering": "no"
     }
 
     return StreamingResponse(event_generator(), media_type="text/event-stream", headers=headers)

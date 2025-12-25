@@ -3,6 +3,7 @@ from bson import ObjectId
 from datetime import datetime
 from typing import List, Optional, Any, Dict
 from cognitus_ai.database import db
+from cognitus_ai.utils.nanoid import generate_id
 from .schemas import Chat, ChatCreate, ChatUpdate
 
 class ChatRepository:
@@ -33,7 +34,7 @@ class ChatRepository:
         #     "![Image](https://i.postimg.cc/Mp3ZXpdm/image.png)"
         # )
 
-        seed_history= [{"id": "1", "role": "user", "content": instruction, "type": "instruction"}]
+        seed_history= [{"id": generate_id(), "role": "user", "content": "[USER INSTRUCTION]: " + instruction, "type": "instruction"}]
         chat_dict["history"] = seed_history
         chat_dict["created_at"] = datetime.utcnow()
         chat_dict["updated_at"] = datetime.utcnow()

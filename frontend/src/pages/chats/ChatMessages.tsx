@@ -25,10 +25,12 @@ function ChatMessages({
   chatId,
   chatMessages,
   image_dict,
+  streaming,
 }: {
   chatId: string;
   chatMessages: ChatMessage[];
   image_dict: Record<string, string>;
+  streaming: boolean;
 }) {
   const { scrollToBottom } = useStickToBottomContext();
 
@@ -168,7 +170,6 @@ function ChatMessages({
   };
 
   const time = "Dec 21, 06:02:04 PM"; //temporary hardcoded time
-  const isLoading = true;
 
   return (
     <>
@@ -234,7 +235,10 @@ function ChatMessages({
                 {chatMessage.attachments && chatMessage.attachments.length > 0 && (
                   <MessageAttachments className="mb-2">
                     {chatMessage.attachments.map((attachment: FileUIPart, idx: number) => (
-                      <MessageAttachment key={`${key}-attachment-${idx}`} data={attachment as any} />
+                      <MessageAttachment
+                        key={`${key}-attachment-${idx}`}
+                        data={attachment as any}
+                      />
                     ))}
                   </MessageAttachments>
                 )}
@@ -288,20 +292,19 @@ function ChatMessages({
                   )}
                 </div>
               </Message>
-
-              {isLoading && index === chatMessages.length - 1 && (
-                <Message key={`${key}-loader`} from="assistant">
-                  <MessageContent>
-                    <div className="justify-left gap-2 flex flex-row items-center">
-                      <Loader size={16} />
-                      <span className="animate-pulse">Cognitus is thinking</span>
-                    </div>
-                  </MessageContent>
-                </Message>
-              )}
             </>
           );
         })}
+        {streaming && (
+          <Message from="assistant">
+            <MessageContent>
+              <div className="justify-left gap-2 flex flex-row items-center">
+                <Loader size={16} />
+                <span className="animate-pulse">Cognitus is thinking</span>
+              </div>
+            </MessageContent>
+          </Message>
+        )}
       </ConversationContent>
       <ConversationScrollButton />
     </>

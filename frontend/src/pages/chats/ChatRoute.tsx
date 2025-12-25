@@ -27,25 +27,5 @@ export default function ChatRoute() {
 
   const currentChat = existing || localChat;
 
-  const transformedImageDict = useMemo(() => {
-    if (!currentChat?.file_map) return {};
-
-    const prefix = "http://localhost:9090/output/";
-    const newDict: Record<string, string> = {};
-
-    Object.entries(currentChat.file_map).forEach(([key, value]) => {
-      newDict[key] = value.startsWith("http") ? value : `${prefix}${value}`;
-    });
-
-    return newDict;
-  }, [currentChat?.file_map]);
-
-  return (
-    <ChatsPage
-      key={chatId}
-      chatId={chatId}
-      initialMessages={currentChat?.history ?? []}
-      image_dict={transformedImageDict}
-    />
-  );
+  return <ChatsPage key={chatId} chatId={chatId} initialMessages={currentChat?.history ?? []} />;
 }

@@ -9,18 +9,19 @@ import ChatMessages from "./ChatMessages";
 import ChatInput from "./ChatInput";
 import type { ChatMessage } from "@/lib/constants";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { getChatFiles } from "@/api/chats";
 
 function ChatsPage({
   chatId,
   initialMessages,
-  image_dict,
 }: {
   chatId: string;
   initialMessages: ChatMessage[];
-  image_dict: Record<string, string>;
 }) {
   // Manage messages locally instead of using @ai-sdk/react
+  const [streaming, setStreaming] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
+  const [imageDict, setImageDict] = useState<Record<string, string>>({});
   const [seenIds, setSeenIds] = useState<Set<string>>(
     () => new Set((initialMessages ?? []).map((m) => m.id))
   );
@@ -38,6 +39,26 @@ function ChatsPage({
     }
   }, [initialMessages, messages.length, setMessages]);
 
+  // Helper: transform file_map to absolute URLs
+  const transformFileMap = (map: Record<string, string>): Record<string, string> => {
+    const prefix = "http://localhost:9090/output/";
+    const out: Record<string, string> = {};
+    Object.entries(map || {}).forEach(([key, value]) => {
+      out[key] = value?.startsWith("http") ? value : `${prefix}${value}`;
+    });
+    return out;
+  };
+
+  // Initial file map fetch
+  useEffect(() => {
+    if (!chatId) return;
+    getChatFiles(chatId)
+      .then((map) => setImageDict(transformFileMap(map)))
+      .catch(() => {
+        // ignore failures
+      });
+  }, [chatId]);
+
   // Live SSE stream subscription with Authorization header
   const token = useAuthStore((s) => s.token);
   useEffect(() => {
@@ -53,70 +74,81 @@ function ChatsPage({
     let buffer = "";
 
     const handleFrame = (frame: string) => {
-      // Parse an SSE frame: may contain id:, event:, data: (multi-line)
       const lines = frame.split(/\r?\n/);
+      let eventType = "message"; // Default event type
       let dataLines: string[] = [];
+
       for (const line of lines) {
-        if (!line || line.startsWith(":")) continue; // comment/empty
-        if (line.startsWith("data:")) {
+        if (!line || line.startsWith(":")) continue;
+
+        if (line.startsWith("event:")) {
+          eventType = line.slice(6).trim();
+        } else if (line.startsWith("data:")) {
           dataLines.push(line.slice(5).trimStart());
         }
-        // We ignore id and event fields for now
       }
-      const data = dataLines.join("\n");
-      if (!data) return;
+
+      const dataRaw = dataLines.join("\n");
+      if (!dataRaw) return;
 
       try {
-        const item = JSON.parse(data);
+        const parsedData = JSON.parse(dataRaw);
 
-        // Normalize backend payload to ChatMessage shape
-        let normalized: ChatMessage | null = null;
-        if (item.role === "user" && typeof item.content === "string") {
-          normalized = {
-            id: item.id,
-            role: "user",
-            content: item.content,
-          };
-        } else if (item.role === "assistant") {
-          if (item.function_call) {
-            normalized = {
-              id: item.id,
-              role: "assistant",
-              function_call: {
-                name: item.function_call.name,
-                content: item.function_call.content ?? "",
-                // Map explaination -> explanation
-                explanation:
-                  item.function_call.explanation ?? item.function_call.explaination ?? "",
-              },
-            };
-          } else if (typeof item.content === "string") {
-            normalized = {
-              id: item.id,
-              role: "assistant",
-              content: item.content,
-            };
+        // Handle Status Events
+        if (eventType === "status") {
+          if (parsedData.flag === "flow_started") {
+            setStreaming(true);
+          } else if (parsedData.flag === "flow_finished") {
+            setStreaming(false);
           }
-        } else if (item.role === "function") {
-          normalized = {
-            id: item.id,
-            role: "function",
-            belongsTo: item.belongsTo ?? "",
-            output:
-              typeof item.output === "string" ? item.output : JSON.stringify(item.output ?? {}),
-          };
+          return;
         }
 
-        if (!normalized) return;
+        // Handle Message Events (existing logic)
+        if (eventType === "message") {
+          let normalized: ChatMessage | null = null;
+          const item = parsedData;
 
-        setMessages((prev) => {
-          // Robust duplicate check using current state
-          if (prev.some((m) => m.id === normalized!.id)) return prev;
-          return [...prev, normalized!];
-        });
-        setSeenIds((prev) => new Set([...prev, normalized!.id]));
-      } catch {
-        // ignore malformed events
+          if (item.role === "user" && typeof item.content === "string") {
+            normalized = { id: item.id, role: "user", content: item.content };
+          } else if (item.role === "assistant") {
+            if (item.function_call) {
+              normalized = {
+                id: item.id,
+                role: "assistant",
+                function_call: {
+                  name: item.function_call.name,
+                  content: item.function_call.content ?? "",
+                  explanation:
+                    item.function_call.explanation ?? item.function_call.explaination ?? "",
+                },
+              };
+            } else if (typeof item.content === "string") {
+              normalized = { id: item.id, role: "assistant", content: item.content };
+            }
+          } else if (item.role === "function") {
+            normalized = {
+              id: item.id,
+              role: "function",
+              belongsTo: item.belongsTo ?? "",
+              output:
+                typeof item.output === "string" ? item.output : JSON.stringify(item.output ?? {}),
+            };
+          }
+
+          if (normalized) {
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === normalized!.id)) return prev;
+              return [...prev, normalized!];
+            });
+
+            getChatFiles(chatId)
+              .then((map) => setImageDict(transformFileMap(map)))
+              .catch(() => {});
+          }
+        }
+      } catch (err) {
+        // console.error("Error parsing SSE frame", err);
       }
     };
 
@@ -170,7 +202,12 @@ function ChatsPage({
       {messages.length > 0 ? (
         <>
           <Conversation>
-            <ChatMessages chatId={chatId} chatMessages={messages} image_dict={image_dict} />
+            <ChatMessages
+              chatId={chatId}
+              chatMessages={messages}
+              image_dict={imageDict}
+              streaming={streaming}
+            />
           </Conversation>
           <PromptInputProvider>
             <ChatInput

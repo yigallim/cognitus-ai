@@ -649,7 +649,6 @@
           "chats"
         ],
         "summary": "Stream Chat History Sse",
-        "description": "Stream chat history events from Redis Stream as SSE.\n\nUses Redis Stream at key `stream:{chat_id}:history` and emits each\nentry's `data` field (JSON string) as the SSE `data` payload.",
         "operationId": "stream_chat_history_sse_chats__chat_id__stream_get",
         "security": [
           {
