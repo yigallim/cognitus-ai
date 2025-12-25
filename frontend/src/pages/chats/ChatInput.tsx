@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { SendHorizontal } from "lucide-react";
 import type { ChatMessage } from "@/lib/constants";
+import { sendAgentInstruction } from "@/api/chats";
 import {
   PromptInput,
   PromptInputActionAddAttachments,
@@ -23,9 +24,10 @@ interface ChatInputProps {
   chatMessages: ChatMessage[];
   setChatMessages: (newChatMessages: ChatMessage[]) => void;
   files?: File[];
+  newChat: boolean;
 }
 
-function ChatInput({ chatId, chatMessages, setChatMessages, files }: ChatInputProps) {
+function ChatInput({ chatId, chatMessages, setChatMessages, newChat, files }: ChatInputProps) {
   const [inputText, setInputText] = useState<string>("");
   const promptController = usePromptInputController();
   const initialisedRef = useRef(false);
@@ -57,36 +59,31 @@ function ChatInput({ chatId, chatMessages, setChatMessages, files }: ChatInputPr
       },
     ];
 
-    setChatMessages([
-      ...newChatMessages,
-      {
-        id: (chatMessages.length + 1).toString(),
-        role: "assistant",
-        content: `Response to: " + ${message.text}\n
-This is example codes.\n\n
-\`\`\`python
-# Load labelled.csv and do an initial inspection
-import pandas as pd
-from tqdm import tqdm
-
-labelled_df = pd.read_csv('labelled.csv', encoding='ascii')
-print(labelled_df.head())
-print(labelled_df.describe(include='all'))
-\`\`\`
-Simple Table:
-| Header 1 | Header 2 | Header 3 | Header 3 |
-|---|---|---|---|
-| Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 | Row 1, Col 4 |
-| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 |`,
-      },
-    ]);
+    // Optimistically add the user message
+    setChatMessages(newChatMessages);
 
     // Create a backend chat only when first sending in a new chat
-    if (!chatId || chatId === "new-chat") {
-      const chat = await createChat("Chat");
+    let targetChatId = chatId;
+    const isNewChat = newChat;
+    if (isNewChat) {
+      const chat = await createChat("Chat", message.text ?? "");
       if (chat?.id) {
+        targetChatId = chat.id;
         navigate(`/chats/${chat.id}`, { replace: true });
       }
+    }
+
+    // Send the instruction to the agent endpoint
+    try {
+      // If we just created the chat and already passed instruction, avoid double-sending
+      if (targetChatId) {
+        await sendAgentInstruction(targetChatId, {
+          user_instruction: message.text ?? "",
+        });
+      }
+    } catch (e) {
+      // TODO: surface error to user via toast
+      console.error("Failed to send instruction to agent", e);
     }
 
     setInputText("");

@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocation } from "react-router";
-import { useChat } from "@ai-sdk/react";
+import { useChatStore } from "@/stores/useChatStore";
 import { Conversation } from "@/components/ai-elements/conversation";
 import { PromptInputProvider } from "@/components/ai-elements/prompt-input";
 import { useEffect, useState } from "react";
@@ -18,14 +18,16 @@ function ChatsPage({
   initialMessages: ChatMessage[];
   image_dict: Record<string, string>;
 }) {
-  const { messages, setMessages } = useChat<ChatMessage & any>({
-    // transport: new DefaultChatTransport({
-    //   api: '/api/ai/chat'
-    // }),
-  });
+  // Manage messages locally instead of using @ai-sdk/react
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages ?? []);
+
+  // Use chat store instead of external chat hook
+  const fetchChats = useChatStore((state) => state.fetchChats);
+  useEffect(() => {
+    fetchChats();
+  }, [fetchChats]);
 
   useEffect(() => {
-    // Only hydrate with initial messages if none are present
     if (messages.length === 0 && initialMessages?.length) {
       setMessages(initialMessages);
     }
@@ -41,6 +43,14 @@ function ChatsPage({
           <Conversation>
             <ChatMessages chatId={chatId} chatMessages={messages} image_dict={image_dict} />
           </Conversation>
+          <PromptInputProvider>
+            <ChatInput
+              chatId={chatId}
+              chatMessages={messages}
+              setChatMessages={setMessages}
+              newChat={false}
+            />
+          </PromptInputProvider>
         </>
       ) : (
         <div className="flex-1 flex items-center justify-center">
@@ -56,17 +66,12 @@ function ChatsPage({
                   chatMessages={messages}
                   setChatMessages={setMessages}
                   files={fileState}
+                  newChat={true}
                 />
               </PromptInputProvider>
             </div>
           </div>
         </div>
-      )}
-
-      {messages.length > 0 && (
-        <PromptInputProvider>
-          <ChatInput chatId={chatId} chatMessages={messages} setChatMessages={setMessages} />
-        </PromptInputProvider>
       )}
     </div>
   );

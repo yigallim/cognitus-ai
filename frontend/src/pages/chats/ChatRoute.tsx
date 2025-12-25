@@ -16,15 +16,21 @@ export default function ChatRoute() {
   useEffect(() => {
     let active = true;
     (async () => {
-      if (!existing && chatId) {
-        try {
+      if (!chatId) return;
+      try {
+        // Fetch chat details if not in store or history is missing/empty
+        if (!existing || !existing.history?.length) {
           const chat = await apiGetChat(chatId);
           if (!active) return;
           setInitialMessagesLocal(chat.history ?? []);
-        } catch (err) {
+        } else {
           if (!active) return;
-          navigate("/", { replace: true });
+          // Keep local messages aligned with store when available
+          setInitialMessagesLocal(existing.history);
         }
+      } catch (err) {
+        if (!active) return;
+        navigate("/", { replace: true });
       }
     })();
     return () => {
@@ -32,5 +38,7 @@ export default function ChatRoute() {
     };
   }, [chatId, existing, navigate]);
 
-  return <ChatsPage chatId={chatId} initialMessages={initialMessages} image_dict={{}} />;
+  return (
+    <ChatsPage key={chatId} chatId={chatId} initialMessages={initialMessages} image_dict={{}} />
+  );
 }

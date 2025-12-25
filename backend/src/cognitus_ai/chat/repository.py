@@ -9,35 +9,31 @@ class ChatRepository:
     def __init__(self, db: AsyncIOMotorDatabase):
         self.collection = db["chats"]
 
-    async def create(self, user_id: str, chat: ChatCreate) -> Chat:
+    async def create(self, user_id: str, instruction: str, chat: ChatCreate) -> Chat:
         chat_dict = chat.model_dump()
         chat_dict["user_id"] = user_id
 
         # Seed mock chat history on creation
-        assistant_content = (
-            "This is example codes.\n\n\n"
-            "```python\n"
-            "# Load labelled.csv and do an initial inspection\n"
-            "import pandas as pd\n"
-            "from tqdm import tqdm\n\n"
-            "labelled_df = pd.read_csv('labelled.csv', encoding='ascii')\n"
-            "print(labelled_df.head())\n"
-            "print(labelled_df.describe(include='all'))\n"
-            "```\n\n"
-            "Simple Table:\n"
-            "| Header 1 | Header 2 | Header 3 | Header 3 |\n"
-            "|---|---|---|---|\n"
-            "| Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 | Row 1, Col 4 |\n"
-            "| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 |\n"
-            "\n\nAnd here is an image:\n\n\n"
-            "![Image](https://i.postimg.cc/Mp3ZXpdm/image.png)"
-        )
+        # assistant_content = (
+        #     "This is example codes.\n\n\n"
+        #     "```python\n"
+        #     "# Load labelled.csv and do an initial inspection\n"
+        #     "import pandas as pd\n"
+        #     "from tqdm import tqdm\n\n"
+        #     "labelled_df = pd.read_csv('labelled.csv', encoding='ascii')\n"
+        #     "print(labelled_df.head())\n"
+        #     "print(labelled_df.describe(include='all'))\n"
+        #     "```\n\n"
+        #     "Simple Table:\n"
+        #     "| Header 1 | Header 2 | Header 3 | Header 3 |\n"
+        #     "|---|---|---|---|\n"
+        #     "| Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 | Row 1, Col 4 |\n"
+        #     "| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 | Row 2, Col 4 |\n"
+        #     "\n\nAnd here is an image:\n\n\n"
+        #     "![Image](https://i.postimg.cc/Mp3ZXpdm/image.png)"
+        # )
 
-        seed_history: List[dict[str, Any]] = [
-            {"id": "1", "role": "user", "content": "This is history of Chats Page 2."},
-            {"id": "2", "role": "assistant", "content": assistant_content},
-        ]
-
+        seed_history= [{"id": "1", "role": "user", "content": instruction, "type": "instruction"}]
         chat_dict["history"] = seed_history
         chat_dict["created_at"] = datetime.utcnow()
         chat_dict["updated_at"] = datetime.utcnow()

@@ -1,5 +1,7 @@
 import json
 from typing import List, Annotated, Any
+import httpx
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from cognitus_ai.utils.parse_action import parse_action
@@ -9,6 +11,9 @@ from ..auth.dependencies import get_current_user
 from ..auth.schemas import User
 
 router = APIRouter(prefix="/chats", tags=["chats"])
+
+class ChatInstruction(BaseModel):
+    user_instruction: str
 
 def _process_history(history: List[dict[str, Any]]) -> List[dict[str, Any]]:
     processed: List[dict[str, Any]] = []
@@ -37,19 +42,20 @@ def _process_history(history: List[dict[str, Any]]) -> List[dict[str, Any]]:
             })
 
         elif role == "user" and msg_type == "tool_result":
-            belongs_to = processed[-1]["id"] if processed else ""
-
-            output_dict = {
-                "text": [msg.content],
-                "image":  ["https://plus.unsplash.com/premium_photo-1664474619075-644dd191935f?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8aW1hZ2V8ZW58MHx8MHx8fDA%3D"]
-            }
-            
-            processed.append({
-                "id": msg.id,
-                "role": "function",
-                "belongsTo": belongs_to,
-                "output": json.dumps(output_dict)
-            })
+            if isinstance(msg, UserMessage):
+                belongs_to = processed[-1]["id"] if processed else ""
+                url_prefix = "http://localhost:9090/output/"
+                output_dict = {
+                    "text": [msg.content],
+                    "image": [f"{url_prefix}{img}" for img in msg.image] if msg.image else [],
+                }
+                
+                processed.append({
+                    "id": msg.id,
+                    "role": "function",
+                    "belongsTo": belongs_to,
+                    "output": json.dumps(output_dict)
+                })
 
         elif role == "assistant" and msg_type == "tool_call":
             action = parse_action(msg.content) or {}
@@ -91,7 +97,8 @@ async def create_chat(
     chat_in: ChatCreate,
     current_user: Annotated[User, Depends(get_current_user)]
 ):
-    return await chat_repository.create(current_user.email, chat_in)
+    instruction = chat_in.user_instruction or ""
+    return await chat_repository.create(current_user.email, instruction, chat_in)
 
 @router.get("/", response_model=List[Chat])
 async def list_chats(
@@ -119,6 +126,37 @@ async def get_chat(
     chat_dict = chat.model_dump()
     chat_dict["history"] = _process_history(chat.history)
     return Chat(**chat_dict)
+
+@router.post("/{chat_id}/agent", status_code=status.HTTP_200_OK)
+async def forward_to_local_agent(
+    chat_id: str,
+    body: ChatInstruction,
+    current_user: Annotated[User, Depends(get_current_user)]
+):
+    chat = await chat_repository.get_by_id(chat_id, current_user.email)
+    if not chat:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Chat not found"
+        )
+
+    payload = {
+        "user_instruction": body.user_instruction,
+        "session_id": chat_id,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.post("http://localhost:9090/chat", json=payload)
+            resp.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        # Bubble up upstream status codes with response body
+        raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
+    except httpx.RequestError as e:
+        # Network or connection errors
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Failed to reach upstream: {e}")
+
+    return resp.json()
 
 @router.patch("/{chat_id}", response_model=Chat)
 async def rename_chat(

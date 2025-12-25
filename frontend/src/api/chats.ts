@@ -11,6 +11,7 @@ export type Chat = {
 
 export type ChatCreate = {
   title: string;
+  user_instruction?: string;
 };
 
 export type ChatUpdate = {
@@ -39,4 +40,17 @@ export const updateChat = async (chatId: string, payload: ChatUpdate): Promise<C
 
 export const deleteChat = async (chatId: string): Promise<void> => {
   await api.delete(`/chats/${chatId}`);
+};
+
+// Interact with the agent for a specific chat
+export type AgentInstructionPayload = {
+  user_instruction: string;
+};
+
+export const sendAgentInstruction = async (
+  chatId: string,
+  payload: AgentInstructionPayload
+): Promise<any> => {
+  const res = await api.post(`/chats/${chatId}/agent`, payload);
+  return res.data;
 };

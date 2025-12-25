@@ -49,6 +49,8 @@ class SystemMessage(BaseChatMessage):
 class UserMessage(BaseChatMessage):
     role: Literal["user"] = "user"
     type: Literal["instruction", "tool_result"] = "instruction"
+    image: list[str] | None = None
+    table: list[dict] | None = None
 
 class AssistantMessage(BaseChatMessage):
     role: Literal["assistant"] = "assistant"
@@ -58,7 +60,7 @@ class ChatBase(BaseModel):
     title: str
 
 class ChatCreate(ChatBase):
-    pass
+    user_instruction: Optional[str] = None
 
 class ChatUpdate(BaseModel):
     title: Optional[str] = None

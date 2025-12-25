@@ -588,6 +588,61 @@
         }
       }
     },
+    "/chats/{chat_id}/agent": {
+      "post": {
+        "tags": [
+          "chats"
+        ],
+        "summary": "Forward To Local Agent",
+        "operationId": "forward_to_local_agent_chats__chat_id__agent_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "chat_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Chat Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatInstruction"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -670,6 +725,17 @@
           "title": {
             "type": "string",
             "title": "Title"
+          },
+          "user_instruction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Instruction"
           }
         },
         "type": "object",
@@ -677,6 +743,19 @@
           "title"
         ],
         "title": "ChatCreate"
+      },
+      "ChatInstruction": {
+        "properties": {
+          "user_instruction": {
+            "type": "string",
+            "title": "User Instruction"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_instruction"
+        ],
+        "title": "ChatInstruction"
       },
       "ChatUpdate": {
         "properties": {

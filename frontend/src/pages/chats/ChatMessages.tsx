@@ -201,7 +201,7 @@ function ChatMessages({
                   <ExpandedCodeBlock
                     title={isPythonCode ? "Code" : isExport ? "Export as CSV" : "SQL Query"}
                     language={isPythonCode ? "python" : "MySQL"}
-                    code={code}
+                    code={code.trim()}
                     codeExplanation={codeExplanation}
                     outputs={outputs}
                   />
