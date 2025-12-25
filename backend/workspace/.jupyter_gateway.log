@@ -1,9 +1,0 @@
-Jupyter Kernel Gateway 3.0.1 is available at http://127.0.0.1:8888
-Kernel started: dfebd8df-de18-417f-8c4a-3ce0980001f0
-No session ID specified
-Adapting from protocol version 5.3 (kernel dfebd8df-de18-417f-8c4a-3ce0980001f0) to 5.4 (client).
-Connecting to kernel dfebd8df-de18-417f-8c4a-3ce0980001f0.
-Starting buffering for dfebd8df-de18-417f-8c4a-3ce0980001f0:60d21625-18804d52c53e2cbada9b60c9
-interrupted
-Shutting down...
-Kernel shutdown: dfebd8df-de18-417f-8c4a-3ce0980001f0

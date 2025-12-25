@@ -7,6 +7,7 @@ export type Chat = {
   history: ChatMessage[];
   created_at?: string;
   updated_at?: string;
+  file_map: Record<string, string>;
 };
 
 export type ChatCreate = {
@@ -52,5 +53,10 @@ export const sendAgentInstruction = async (
   payload: AgentInstructionPayload
 ): Promise<any> => {
   const res = await api.post(`/chats/${chatId}/agent`, payload);
+  return res.data;
+};
+
+export const getChatFiles = async (chatId: string): Promise<Record<string, string>> => {
+  const res = await api.get(`/chats/${chatId}/files`);
   return res.data;
 };

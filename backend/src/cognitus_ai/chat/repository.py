@@ -37,7 +37,7 @@ class ChatRepository:
         chat_dict["history"] = seed_history
         chat_dict["created_at"] = datetime.utcnow()
         chat_dict["updated_at"] = datetime.utcnow()
-
+        chat_dict["file_map"] = {}
         result = await self.collection.insert_one(chat_dict)
         chat_dict["id"] = chat_dict.pop("_id")
         return Chat(**chat_dict)
@@ -108,5 +108,18 @@ class ChatRepository:
             "user_id": user_id
         })
         return result.deleted_count > 0
+    
+    async def get_file_map(self, chat_id: str, user_id: str) -> Optional[Dict[str, str]]:
+        if not ObjectId.is_valid(chat_id):
+            return None
+            
+        chat_dict = await self.collection.find_one(
+            {"_id": ObjectId(chat_id), "user_id": user_id},
+            {"file_map": 1}  # Projection to only get file_map
+        )
+        
+        if chat_dict:
+            return chat_dict.get("file_map", {})
+        return None
 
 chat_repository = ChatRepository(db)

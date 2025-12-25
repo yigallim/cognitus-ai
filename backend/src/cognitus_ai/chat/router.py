@@ -119,12 +119,11 @@ async def get_chat(
 ):
     chat = await chat_repository.get_by_id(chat_id, current_user.email)
     if not chat:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Chat not found"
-        )
+        raise HTTPException(status_code=404, detail="Chat not found")
+    
     chat_dict = chat.model_dump()
     chat_dict["history"] = _process_history(chat.history)
+    
     return Chat(**chat_dict)
 
 @router.post("/{chat_id}/agent", status_code=status.HTTP_200_OK)
@@ -185,3 +184,17 @@ async def delete_chat(
         )
     return None
 
+@router.get("/{chat_id}/files", response_model=dict[str, str])
+async def get_chat_file_map(
+    chat_id: str,
+    current_user: Annotated[User, Depends(get_current_user)]
+):
+    file_map = await chat_repository.get_file_map(chat_id, current_user.email)
+    
+    if file_map is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Chat not found or file map is empty"
+        )
+        
+    return file_map

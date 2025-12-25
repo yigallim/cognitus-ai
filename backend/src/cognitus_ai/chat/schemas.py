@@ -74,6 +74,7 @@ class Chat(ChatBase):
     history: List[dict[str, Any]] = []
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    file_map: dict[str, str] = Field(default_factory=dict)
 
     class Config:
         populate_by_name = True

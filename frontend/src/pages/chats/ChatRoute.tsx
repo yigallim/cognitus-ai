@@ -1,44 +1,51 @@
 import { useNavigate, useParams } from "react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import ChatsPage from "./ChatsPage";
 import { useChatStore } from "@/stores/useChatStore";
-import { getChat as apiGetChat } from "@/api/chats";
+import { getChat as apiGetChat, type Chat } from "@/api/chats";
 
 export default function ChatRoute() {
   const { chatId = "" } = useParams<{ chatId: string }>();
   const navigate = useNavigate();
   const chats = useChatStore((s) => s.chats);
   const existing = chats.find((c) => c.id === chatId);
-  const [initialMessagesLocal, setInitialMessagesLocal] = useState<any[]>([]);
 
-  const initialMessages = existing?.history ?? initialMessagesLocal;
+  const [localChat, setLocalChat] = useState<Chat | null>(null);
 
   useEffect(() => {
-    let active = true;
-    (async () => {
-      if (!chatId) return;
-      try {
-        // Fetch chat details if not in store or history is missing/empty
-        if (!existing || !existing.history?.length) {
+    if (!existing) {
+      (async () => {
+        try {
           const chat = await apiGetChat(chatId);
-          if (!active) return;
-          setInitialMessagesLocal(chat.history ?? []);
-        } else {
-          if (!active) return;
-          // Keep local messages aligned with store when available
-          setInitialMessagesLocal(existing.history);
+          setLocalChat(chat);
+        } catch {
+          navigate("/", { replace: true });
         }
-      } catch (err) {
-        if (!active) return;
-        navigate("/", { replace: true });
-      }
-    })();
-    return () => {
-      active = false;
-    };
+      })();
+    }
   }, [chatId, existing, navigate]);
 
+  const currentChat = existing || localChat;
+
+  const transformedImageDict = useMemo(() => {
+    if (!currentChat?.file_map) return {};
+
+    const prefix = "http://localhost:9090/output/";
+    const newDict: Record<string, string> = {};
+
+    Object.entries(currentChat.file_map).forEach(([key, value]) => {
+      newDict[key] = value.startsWith("http") ? value : `${prefix}${value}`;
+    });
+
+    return newDict;
+  }, [currentChat?.file_map]);
+
   return (
-    <ChatsPage key={chatId} chatId={chatId} initialMessages={initialMessages} image_dict={{}} />
+    <ChatsPage
+      key={chatId}
+      chatId={chatId}
+      initialMessages={currentChat?.history ?? []}
+      image_dict={transformedImageDict}
+    />
   );
 }
