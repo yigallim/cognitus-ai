@@ -640,7 +640,8 @@
           },
           "history": {
             "items": {
-              "$ref": "#/components/schemas/Message"
+              "additionalProperties": true,
+              "type": "object"
             },
             "type": "array",
             "title": "History",
@@ -753,40 +754,6 @@
           "user"
         ],
         "title": "LoginResponse"
-      },
-      "Message": {
-        "properties": {
-          "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "content": {
-            "type": "string",
-            "title": "Content"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Timestamp"
-          }
-        },
-        "type": "object",
-        "required": [
-          "role",
-          "content"
-        ],
-        "title": "Message"
       },
       "Role": {
         "type": "string",

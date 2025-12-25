@@ -1,11 +1,75 @@
-from typing import List, Annotated
+import json
+from typing import List, Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, status
-from .schemas import Chat, ChatCreate, ChatUpdate
+
+from cognitus_ai.utils.parse_action import parse_action
+from .schemas import AssistantMessage, Chat, ChatCreate, ChatUpdate, SystemMessage, UserMessage
 from .repository import chat_repository
 from ..auth.dependencies import get_current_user
 from ..auth.schemas import User
 
 router = APIRouter(prefix="/chats", tags=["chats"])
+
+def _process_history(history: List[dict[str, Any]]) -> List[dict[str, Any]]:
+    processed: List[dict[str, Any]] = []
+    
+    for msg_dict in history or []:
+        role = msg_dict.get("role")
+        msg_type = msg_dict.get("type")
+
+        try:
+            if role == "user":
+                msg = UserMessage(**msg_dict)
+            elif role == "assistant":
+                msg = AssistantMessage(**msg_dict)
+            elif role == "system":
+                msg = SystemMessage(**msg_dict)
+            else:
+                continue
+        except Exception:
+            continue
+
+        if role == "user" and msg_type == "instruction":
+            processed.append({
+                "id": msg.id,
+                "role": msg.role,
+                "content": msg.content,
+            })
+
+        elif role == "user" and msg_type == "tool_result":
+            belongs_to = processed[-1]["id"] if processed else ""
+
+            output_dict = {
+                "[text]-12345678": msg.content,
+                "[image]-2d0c2b2b":  "https://plus.unsplash.com/premium_photo-1664474619075-644dd191935f?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8aW1hZ2V8ZW58MHx8MHx8fDA%3D"
+            }
+            
+            processed.append({
+                "id": msg.id,
+                "role": "function",
+                "belongsTo": belongs_to,
+                "output": json.dumps(output_dict)
+            })
+
+        elif role == "assistant" and msg_type == "tool_call":
+            action = parse_action(msg.content)
+            processed.append({
+                "id": msg.id,
+                "role": msg.role,
+                "function_call": {
+                    "name": (action or {}).get("action", "execute_code"),
+                    "content": (action or {}).get("parameters", {}).get("code", ""),
+                },
+            })
+
+        elif role == "assistant" and msg_type == "final_answer":
+            processed.append({
+                "id": msg.id,
+                "role": msg.role,
+                "content": msg.content,
+            })
+
+    return processed
 
 @router.post("/", response_model=Chat, status_code=status.HTTP_201_CREATED)
 async def create_chat(
@@ -18,7 +82,13 @@ async def create_chat(
 async def list_chats(
     current_user: Annotated[User, Depends(get_current_user)]
 ):
-    return await chat_repository.list_by_user(current_user.email)
+    chats = await chat_repository.list_by_user(current_user.email)
+    result: List[Chat] = []
+    for chat in chats:
+        chat_dict = chat.model_dump()
+        chat_dict["history"] = _process_history(chat.history)
+        result.append(Chat(**chat_dict))
+    return result
 
 @router.get("/{chat_id}", response_model=Chat)
 async def get_chat(
@@ -59,3 +129,4 @@ async def delete_chat(
             detail="Chat not found or could not be deleted"
         )
     return None
+

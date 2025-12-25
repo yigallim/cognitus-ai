@@ -1,9 +1,9 @@
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from bson import ObjectId 
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
 from cognitus_ai.database import db
-from .schemas import Chat, ChatCreate, ChatUpdate, Message
+from .schemas import Chat, ChatCreate, ChatUpdate
 
 class ChatRepository:
     def __init__(self, db: AsyncIOMotorDatabase):
@@ -33,12 +33,12 @@ class ChatRepository:
             "![Image](https://i.postimg.cc/Mp3ZXpdm/image.png)"
         )
 
-        seed_history: List[Message] = [
-            Message(id="1", role="user", content="This is history of Chats Page 2."),
-            Message(id="2", role="assistant", content=assistant_content),
+        seed_history: List[dict[str, Any]] = [
+            {"id": "1", "role": "user", "content": "This is history of Chats Page 2."},
+            {"id": "2", "role": "assistant", "content": assistant_content},
         ]
 
-        chat_dict["history"] = [m.model_dump() for m in seed_history]
+        chat_dict["history"] = seed_history
         chat_dict["created_at"] = datetime.utcnow()
         chat_dict["updated_at"] = datetime.utcnow()
 
@@ -85,14 +85,14 @@ class ChatRepository:
             return Chat(**chat_dict)
         return None
 
-    async def add_message(self, chat_id: str, user_id: str, message: Message) -> Optional[Chat]:
+    async def add_message(self, chat_id: str, user_id: str, message: Dict[str, Any]) -> Optional[Chat]:
         if not ObjectId.is_valid(chat_id):
             return None
             
         chat_dict = await self.collection.find_one_and_update(
             {"_id": ObjectId(chat_id), "user_id": user_id},
             {
-                "$push": {"history": message.model_dump()},
+                "$push": {"history": message},
                 "$set": {"updated_at": datetime.utcnow()}
             },
             return_document=True

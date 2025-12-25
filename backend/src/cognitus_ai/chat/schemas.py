@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema
-from typing import List, Optional, Any
+from typing import List, Literal, Optional, Any
 from datetime import datetime
 from bson.objectid import ObjectId
 
@@ -36,11 +36,23 @@ class PyObjectId(str):
     ) -> JsonSchemaValue:
         return handler(core_schema.str_schema())
 
-class Message(BaseModel):
-    id: Optional[str] = None
-    role: str
+
+
+class BaseChatMessage(BaseModel):
+    id: str = ""
     content: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    name: Optional[str] = None
+
+class SystemMessage(BaseChatMessage):
+    role: Literal["system"] = "system"
+
+class UserMessage(BaseChatMessage):
+    role: Literal["user"] = "user"
+    type: Literal["instruction", "tool_result"] = "instruction"
+
+class AssistantMessage(BaseChatMessage):
+    role: Literal["assistant"] = "assistant"
+    type: Literal["tool_call", "final_answer"] = "tool_call"
 
 class ChatBase(BaseModel):
     title: str
@@ -51,10 +63,13 @@ class ChatCreate(ChatBase):
 class ChatUpdate(BaseModel):
     title: Optional[str] = None
 
+class ChatCaptureRequest(BaseModel):
+    content: str
+
 class Chat(ChatBase):
     id: PyObjectId = Field(default_factory=PyObjectId)
     user_id: str
-    history: List[Message] = []
+    history: List[dict[str, Any]] = []
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
