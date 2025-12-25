@@ -72,7 +72,9 @@ import {
   useRef,
   useState,
 } from "react";
-import MentionsMenu, { type MentionItem, MOCK_MENTIONS } from "../MentionMenu";
+import MentionsMenu, { type MentionItem } from "../MentionMenu";
+import { useQuery } from "@tanstack/react-query";
+import { fetchFiles } from "@/api/files";
 
 // ============================================================================
 // Provider Context & Types
@@ -824,12 +826,12 @@ export const PromptInputTextarea = ({
   const [activeIndex, setActiveIndex] = useState<number>(0);
 
   // -- Fetch Real Files --
-  // const { data: files = [] } = useQuery({
-  //   queryKey: ["files"],
-  //   queryFn: fetchFiles,
-  //   staleTime: 1000 * 60 * 5, // Cache for 5 mins
-  //   enabled: mentionQuery !== null, // Only fetch/active when typing mention 
-  // });
+  const { data: files = [] } = useQuery({
+    queryKey: ["files"],
+    queryFn: fetchFiles,
+    staleTime: 1000 * 60 * 5, // Cache for 5 mins
+    enabled: mentionQuery !== null, // Only fetch/active when typing mention 
+  });
 
   // -- Calculate Suggestions (Real Files + Mock DBs) --
   const suggestions = useMemo(() => {
@@ -837,29 +839,28 @@ export const PromptInputTextarea = ({
 
     const lowerQuery = mentionQuery.toLowerCase();
 
-    // Simply filter the static mock list
-    return MOCK_MENTIONS.filter((item) =>
-      item.name.toLowerCase().includes(lowerQuery)
+    // Transform Backend Files to MentionItems
+    const fileItems: MentionItem[] = files
+      .filter((f: any) => f.filename.toLowerCase().includes(lowerQuery))
+      .map((f: any) => ({
+        id: f.id,
+        name: f.filename,
+        type: "file",
+        category: "Files",
+        originalData: f
+      }));
+
+    // Filter Databases
+    const database: MentionItem[] = [
+      { id: "db1", name: "MySql", type: "database", category: "Databases" }
+    ];
+
+    const dbItems = database.filter((db) =>
+      db.name.toLowerCase().includes(lowerQuery)
     );
 
-    // // Transform Backend Files to MentionItems
-    // const fileItems: MentionItem[] = files
-    //   .filter((f: any) => f.filename.toLowerCase().includes(lowerQuery))
-    //   .map((f: any) => ({
-    //     id: f.id,
-    //     name: f.filename,
-    //     type: "file",
-    //     category: "Files",
-    //     originalData: f
-    //   }));
-
-    // // Filter Mock Databases
-    // const dbItems = MOCK_DATABASES.filter((db) =>
-    //   db.name.toLowerCase().includes(lowerQuery)
-    // );
-
     // Return combined list (Files first)
-    // return [...fileItems, ...dbItems];
+    return [...fileItems, ...dbItems];
   }, [mentionQuery]);
 
   // Reset active index when query changes
@@ -896,31 +897,24 @@ export const PromptInputTextarea = ({
     }
 
     // Add Attachment
-    // For UI testing, we treat everything as a virtual file
-    const virtualFile = new File(
-      [""],
-      item.name,
-      { type: item.type === 'database' ? 'application/vnd.database' : 'text/plain' }
-    );
-    attachments.add([virtualFile]);
-    // if (item.type === 'file') {
-    //   // Pass the object structure. PromptInputProvider handles objects with 'id' 
-    //   // by generating the /api/files/download/{id} URL automatically.
-    //   attachments.add([{
-    //     id: item.id,
-    //     name: item.name,
-    //     filename: item.name,
-    //     type: "file" // or item.originalData.content_type
-    //   }] as any);
-    // } else {
-    //   // For Databases (Mock) - Virtual File
-    //   const virtualFile = new File(
-    //     [""],
-    //     item.name,
-    //     { type: 'application/vnd.database' }
-    //   );
-    //   attachments.add([virtualFile]);
-    // }
+    if (item.type === 'file') {
+      // Pass the object structure. PromptInputProvider handles objects with 'id' 
+      // by generating the /api/files/download/{id} URL automatically.
+      attachments.add([{
+        id: item.id,
+        name: item.name,
+        filename: item.name,
+        type: item.originalData.content_type
+      }] as any);
+    } else {
+      // For Databases (Mock) - Virtual File
+      const virtualFile = new File(
+        [""],
+        item.name,
+        { type: 'application/vnd.database' }
+      );
+      attachments.add([virtualFile]);
+    }
 
     // Reset UI
     setMentionQuery(null);

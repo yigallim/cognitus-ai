@@ -7,24 +7,8 @@ export type MentionItem = {
     name: string;
     type: "file" | "database";
     category: "Files" | "Databases";
-    // Optional: store original file object for real files
-    originalData?: any;
+    originalData?: any; // store original file object for real files
 };
-
-// MOCK DATA
-export const MOCK_MENTIONS: MentionItem[] = [
-    // FILES
-    { id: "f1", name: "annual_report_2024.pdf", type: "file", category: "Files" },
-    { id: "f2", name: "user_metrics.csv", type: "file", category: "Files" },
-    { id: "f3", name: "backend_api.py", type: "file", category: "Files" },
-    { id: "f4", name: "requirements.txt", type: "file", category: "Files" },
-    { id: "f5", name: "global_styles.css", type: "file", category: "Files" },
-    
-    // DATABASES
-    { id: "db1", name: "Postgres_Prod_01", type: "database", category: "Databases" },
-    { id: "db2", name: "Mongo_Users_Cluster", type: "database", category: "Databases" },
-    { id: "db3", name: "Redis_Cache_02", type: "database", category: "Databases" },
-];
 
 interface MentionsMenuProps {
     suggestions: MentionItem[];

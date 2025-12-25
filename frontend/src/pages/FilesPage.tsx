@@ -247,7 +247,7 @@ function FilesPage() {
         <div className="flex space-x-3">
           <Button
             variant="outline"
-            className="flex gap-2"
+            className="flex gap-2 cursor-pointer"
             onClick={downloadSelected}
             disabled={Object.values(selected).every((v) => !v)}
           >
@@ -256,7 +256,7 @@ function FilesPage() {
 
           <Button
             variant="outline"
-            className="flex gap-2"
+            className="flex gap-2 cursor-pointer"
             onClick={deleteSelected}
             disabled={Object.values(selected).every((v) => !v)}
           >
@@ -265,7 +265,7 @@ function FilesPage() {
 
           <Button
             variant="outline"
-            className="flex gap-2"
+            className="flex gap-2 cursor-pointer"
             onClick={handleChatWithFiles}
             disabled={Object.values(selected).every((v) => !v) || isActionLoading}
           >
@@ -280,6 +280,7 @@ function FilesPage() {
           <Button
             variant="outline"
             size="icon"
+            className="cursor-pointer"
             onClick={() => refetch()}
             disabled={isLoadingFiles || isActionLoading}
             title="Refresh files"
