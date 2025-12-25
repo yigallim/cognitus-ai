@@ -18,8 +18,6 @@ function ChatsPage({
   initialMessages: ChatMessage[];
   image_dict: Record<string, string>;
 }) {
-  // status: streaming
-  // sendMessage: function to send message (api call)
   const { messages, setMessages } = useChat<ChatMessage & any>({
     // transport: new DefaultChatTransport({
     //   api: '/api/ai/chat'

@@ -8,6 +8,7 @@ import type { FileUIPart, UIMessage } from "ai";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
+  Database,
   File,
   FileJson,
   FileSpreadsheet,
@@ -391,6 +392,8 @@ export function MessageAttachment({ data, className, onRemove, ...props }: Messa
   const getAttachmentIcon = (filename: string) => {
     const extension = filename.split(".").pop()?.toLowerCase();
     switch (extension) {
+      case "pdf":
+        return File;
       case "csv":
       case "xlsx":
         return FileSpreadsheet;
@@ -400,7 +403,7 @@ export function MessageAttachment({ data, className, onRemove, ...props }: Messa
       case "txt":
         return FileText;
       default:
-        return File;
+        return Database;
     }
   };
   const AttachmentIcon = getAttachmentIcon(filename);

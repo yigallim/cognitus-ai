@@ -1,0 +1,122 @@
+import { cn } from "@/lib/utils";
+import { useEffect, useRef } from "react";
+import { Database, FileCode, FileIcon, FileJson, FileSpreadsheet, FileText } from "lucide-react";
+
+export type MentionItem = {
+    id: string;
+    name: string;
+    type: "file" | "database";
+    category: "Files" | "Databases";
+    // Optional: store original file object for real files
+    originalData?: any;
+};
+
+// MOCK DATA
+export const MOCK_MENTIONS: MentionItem[] = [
+    // FILES
+    { id: "f1", name: "annual_report_2024.pdf", type: "file", category: "Files" },
+    { id: "f2", name: "user_metrics.csv", type: "file", category: "Files" },
+    { id: "f3", name: "backend_api.py", type: "file", category: "Files" },
+    { id: "f4", name: "requirements.txt", type: "file", category: "Files" },
+    { id: "f5", name: "global_styles.css", type: "file", category: "Files" },
+    
+    // DATABASES
+    { id: "db1", name: "Postgres_Prod_01", type: "database", category: "Databases" },
+    { id: "db2", name: "Mongo_Users_Cluster", type: "database", category: "Databases" },
+    { id: "db3", name: "Redis_Cache_02", type: "database", category: "Databases" },
+];
+
+interface MentionsMenuProps {
+    suggestions: MentionItem[];
+    activeIndex: number;
+    onSelect: (item: MentionItem) => void;
+    onClose: () => void;
+}
+
+function MentionsMenu({ suggestions, activeIndex, onSelect }: MentionsMenuProps) {
+    const listRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const list = listRef.current;
+        if (!list) return;
+
+        // The list children correspond 1:1 to the suggestions because of the map below
+        const activeElement = list.children[activeIndex] as HTMLElement;
+
+        if (activeElement) {
+            const { offsetTop, offsetHeight } = activeElement;
+            const { scrollTop, clientHeight } = list;
+
+            // 1. If element is above the visible area, scroll up
+            if (offsetTop < scrollTop) {
+                list.scrollTop = offsetTop;
+            } 
+            // 2. If element is below the visible area, scroll down
+            else if (offsetTop + offsetHeight > scrollTop + clientHeight) {
+                list.scrollTop = offsetTop + offsetHeight - clientHeight;
+            }
+        }
+    }, [activeIndex]);
+
+    if (suggestions.length === 0) return null;
+
+    const getAttachmentIcon = (filename: string) => {
+        const extension = filename.split(".").pop()?.toLowerCase();
+        switch (extension) {
+            case "pdf":
+                return FileIcon;
+            case "csv":
+            case "xlsx":
+                return FileSpreadsheet;
+            case "json":
+                return FileJson;
+            case "md":
+            case "txt":
+                return FileText;
+            default:
+                return FileCode;
+        };
+    }
+
+    return (
+        <div className="absolute bottom-full left-0 mb-2 w-64 overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-md animate-in fade-in slide-in-from-bottom-2 z-50">
+            <div 
+                ref={listRef}
+                className="max-h-[250px] overflow-y-auto p-1 bg-white dark:bg-zinc-950" 
+                style={{ scrollbarWidth: "thin" }}
+            >
+                {suggestions.map((item, index) => {
+                    const showHeader = index === 0 || suggestions[index - 1].category !== item.category;
+                    const isActive = index === activeIndex;
+
+                    const AttachmentIcon = item.type === "database" ? Database : getAttachmentIcon(item.name);
+                    const iconColor = item.type === "database" ? "text-green-500" : "text-blue-500";
+
+                    return (
+                        <div key={item.id}>
+                            {showHeader && (
+                                <div className="text-center px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/30">
+                                    {item.category}
+                                </div>
+                            )}
+                            <button
+                                onClick={() => onSelect(item)}
+                                className={cn(
+                                    "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none cursor-pointer text-left transition-colors",
+                                    isActive
+                                        ? "bg-accent text-accent-foreground"
+                                        : "hover:bg-accent hover:text-accent-foreground"
+                                )}
+                            >
+                                <AttachmentIcon className={cn("size-4 shrink-0", iconColor)} />
+                                <span className="truncate">{item.name}</span>
+                            </button>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+export default MentionsMenu;

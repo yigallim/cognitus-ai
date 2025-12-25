@@ -43,10 +43,11 @@ import {
   Loader2Icon,
   MicIcon,
   Paperclip,
-  File,
+  File as FileIcon,
   PlusIcon,
   SquareIcon,
   XIcon,
+  Database,
 } from "lucide-react";
 import { nanoid } from "nanoid";
 import {
@@ -71,6 +72,7 @@ import {
   useRef,
   useState,
 } from "react";
+import MentionsMenu, { type MentionItem, MOCK_MENTIONS } from "../MentionMenu";
 
 // ============================================================================
 // Provider Context & Types
@@ -288,6 +290,8 @@ export function PromptInputAttachment({ data, className, ...props }: PromptInput
   const getAttachmentIcon = (filename: string) => {
     const extension = filename.split(".").pop()?.toLowerCase();
     switch (extension) {
+      case "pdf":
+        return FileIcon;
       case "csv":
       case "xlsx":
         return FileSpreadsheet;
@@ -297,7 +301,7 @@ export function PromptInputAttachment({ data, className, ...props }: PromptInput
       case "txt":
         return FileText;
       default:
-        return File;
+        return Database;
     };
   }
   const AttachmentIcon = getAttachmentIcon(filename);
@@ -784,7 +788,7 @@ export const PromptInput = ({
         type="file"
       />
       <form className={cn("w-full", className)} onSubmit={handleSubmit} ref={formRef} {...props}>
-        <InputGroup className="overflow-hidden">{children}</InputGroup>
+        <InputGroup className="">{children}</InputGroup>
       </form>
     </>
   );
@@ -814,34 +818,193 @@ export const PromptInputTextarea = ({
   const attachments = usePromptInputAttachments();
   const [isComposing, setIsComposing] = useState(false);
 
-  const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
-    if (e.key === "Enter") {
-      if (isComposing || e.nativeEvent.isComposing) {
-        return;
-      }
-      if (e.shiftKey) {
-        return;
-      }
-      e.preventDefault();
+  // -- Mention State --
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [cursorIndex, setCursorIndex] = useState<number>(-1);
+  const [activeIndex, setActiveIndex] = useState<number>(0);
 
-      // Check if the submit button is disabled before submitting
-      const form = e.currentTarget.form;
-      const submitButton = form?.querySelector('button[type="submit"]') as HTMLButtonElement | null;
-      if (submitButton?.disabled) {
-        return;
-      }
+  // -- Fetch Real Files --
+  // const { data: files = [] } = useQuery({
+  //   queryKey: ["files"],
+  //   queryFn: fetchFiles,
+  //   staleTime: 1000 * 60 * 5, // Cache for 5 mins
+  //   enabled: mentionQuery !== null, // Only fetch/active when typing mention 
+  // });
 
-      form?.requestSubmit();
+  // -- Calculate Suggestions (Real Files + Mock DBs) --
+  const suggestions = useMemo(() => {
+    if (mentionQuery === null) return [];
+
+    const lowerQuery = mentionQuery.toLowerCase();
+
+    // Simply filter the static mock list
+    return MOCK_MENTIONS.filter((item) =>
+      item.name.toLowerCase().includes(lowerQuery)
+    );
+
+    // // Transform Backend Files to MentionItems
+    // const fileItems: MentionItem[] = files
+    //   .filter((f: any) => f.filename.toLowerCase().includes(lowerQuery))
+    //   .map((f: any) => ({
+    //     id: f.id,
+    //     name: f.filename,
+    //     type: "file",
+    //     category: "Files",
+    //     originalData: f
+    //   }));
+
+    // // Filter Mock Databases
+    // const dbItems = MOCK_DATABASES.filter((db) =>
+    //   db.name.toLowerCase().includes(lowerQuery)
+    // );
+
+    // Return combined list (Files first)
+    // return [...fileItems, ...dbItems];
+  }, [mentionQuery]);
+
+  // Reset active index when query changes
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [mentionQuery]);
+
+  const handleSelectMention = useCallback((item: MentionItem) => {
+    const textarea = document.querySelector("textarea[name='message']") as HTMLTextAreaElement;
+    if (!textarea || cursorIndex === -1) return;
+
+    const currentValue = textarea.value;
+    const beforeAt = currentValue.substring(0, cursorIndex);
+    const afterQuery = currentValue.substring(textarea.selectionStart);
+
+    // Update text: remove the @mention text
+    const newValue = beforeAt + afterQuery;
+
+    if (controller) {
+      controller.textInput.setInput(newValue);
+
+      if (onChange) {
+        const syntheticEvent = {
+          target: { value: newValue },
+          currentTarget: { value: newValue }
+        } as unknown as ChangeEvent<HTMLTextAreaElement>;
+        onChange(syntheticEvent);
+      }
+    } else {
+      textarea.value = newValue;
+      const event = new Event('input', { bubbles: true });
+      textarea.dispatchEvent(event);
+      onChange?.({ target: textarea, currentTarget: textarea } as any);
     }
 
-    // Remove last attachment when Backspace is pressed and textarea is empty
+    // Add Attachment
+    // For UI testing, we treat everything as a virtual file
+    const virtualFile = new File(
+      [""],
+      item.name,
+      { type: item.type === 'database' ? 'application/vnd.database' : 'text/plain' }
+    );
+    attachments.add([virtualFile]);
+    // if (item.type === 'file') {
+    //   // Pass the object structure. PromptInputProvider handles objects with 'id' 
+    //   // by generating the /api/files/download/{id} URL automatically.
+    //   attachments.add([{
+    //     id: item.id,
+    //     name: item.name,
+    //     filename: item.name,
+    //     type: "file" // or item.originalData.content_type
+    //   }] as any);
+    // } else {
+    //   // For Databases (Mock) - Virtual File
+    //   const virtualFile = new File(
+    //     [""],
+    //     item.name,
+    //     { type: 'application/vnd.database' }
+    //   );
+    //   attachments.add([virtualFile]);
+    // }
+
+    // Reset UI
+    setMentionQuery(null);
+    setCursorIndex(-1);
+
+    requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.setSelectionRange(beforeAt.length, beforeAt.length);
+    });
+  }, [cursorIndex, controller, onChange, attachments]);
+
+  const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
+    if (mentionQuery !== null && suggestions.length > 0) {
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setActiveIndex((prev) => Math.max(0, prev - 1));
+        return;
+      }
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setActiveIndex((prev) => Math.min(suggestions.length - 1, prev + 1));
+        return;
+      }
+
+      if (e.key === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
+        // Select the currently highlighted item
+        handleSelectMention(suggestions[activeIndex]);
+        return;
+      }
+
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setMentionQuery(null);
+        return;
+      }
+    }
+
+    // Standard Submit
+    if (e.key === "Enter") {
+      if (isComposing || e.nativeEvent.isComposing) return;
+      if (e.shiftKey) return;
+
+      if (mentionQuery === null) {
+        e.preventDefault();
+        const form = e.currentTarget.form;
+        const submitButton = form?.querySelector('button[type="submit"]') as HTMLButtonElement | null;
+        if (submitButton?.disabled) return;
+        form?.requestSubmit();
+      }
+    }
+
+    // Backspace attachment removal
     if (e.key === "Backspace" && e.currentTarget.value === "" && attachments.files.length > 0) {
       e.preventDefault();
       const lastAttachment = attachments.files.at(-1);
-      if (lastAttachment) {
-        attachments.remove(lastAttachment.id);
+      if (lastAttachment) attachments.remove(lastAttachment.id);
+    }
+  };
+
+  const handleInput: ChangeEventHandler<HTMLTextAreaElement> = (e) => {
+    const value = e.currentTarget.value;
+    const selectionStart = e.currentTarget.selectionStart;
+
+    // Detect "@" logic
+    const lastAtPos = value.lastIndexOf("@", selectionStart - 1);
+    if (lastAtPos !== -1) {
+      const isStart = lastAtPos === 0;
+      const isPrecededBySpace = value[lastAtPos - 1] === " "; // e.g. "hello @file"
+
+      if (isStart || isPrecededBySpace) {
+        const query = value.substring(lastAtPos + 1, selectionStart);
+        // Stop mention if user types a space (e.g. "@file na...")
+        if (!query.includes(" ")) {
+          setMentionQuery(query);
+          setCursorIndex(lastAtPos);
+          return;
+        }
       }
     }
+    setMentionQuery(null);
+    setCursorIndex(-1);
   };
 
   const handlePaste: ClipboardEventHandler<HTMLTextAreaElement> = (event) => {
@@ -873,25 +1036,40 @@ export const PromptInputTextarea = ({
       value: controller.textInput.value,
       onChange: (e: ChangeEvent<HTMLTextAreaElement>) => {
         controller.textInput.setInput(e.currentTarget.value);
+        handleInput(e);
         onChange?.(e);
       },
     }
     : {
-      onChange,
+      onChange: (e: ChangeEvent<HTMLTextAreaElement>) => {
+        handleInput(e);
+        onChange?.(e);
+      },
     };
 
   return (
-    <InputGroupTextarea
-      className={cn("field-sizing-content max-h-32 pt-0", className)}
-      name="message"
-      onCompositionEnd={() => setIsComposing(false)}
-      onCompositionStart={() => setIsComposing(true)}
-      onKeyDown={handleKeyDown}
-      onPaste={handlePaste}
-      placeholder={placeholder}
-      {...props}
-      {...controlledProps}
-    />
+    <div className="relative w-full">
+      {mentionQuery !== null && (
+        <MentionsMenu
+          suggestions={suggestions}
+          activeIndex={activeIndex}
+          onSelect={handleSelectMention}
+          onClose={() => setMentionQuery(null)}
+        />
+      )}
+
+      <InputGroupTextarea
+        className={cn("field-sizing-content max-h-32 pt-0 w-full", className)}
+        name="message"
+        onCompositionEnd={() => setIsComposing(false)}
+        onCompositionStart={() => setIsComposing(true)}
+        onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
+        placeholder={placeholder}
+        {...props}
+        {...controlledProps}
+      />
+    </div>
   );
 };
 
