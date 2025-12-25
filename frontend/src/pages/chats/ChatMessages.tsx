@@ -17,6 +17,7 @@ import type { ChatMessage } from "@/lib/constants";
 import { CopyButton } from "@/components/CopyButton";
 import { cn } from "@/lib/utils";
 import ImageOutput from "@/components/ImageOutput";
+import { Loader } from "@/components/ai-elements/loader";
 
 type InlinePart = { type: "text"; content: string } | { type: "image"; id: string };
 
@@ -167,6 +168,7 @@ function ChatMessages({
   };
 
   const time = "Dec 21, 06:02:04 PM"; //temporary hardcoded time
+  const isLoading = true;
 
   return (
     <>
@@ -227,64 +229,77 @@ function ChatMessages({
           const isLastAssist = isAssistant && isLastAssistantInBlock(index);
 
           return (
-            <Message key={key} from={chatMessage.role as UIMessage["role"]}>
-              {chatMessage.attachments && chatMessage.attachments.length > 0 && (
-                <MessageAttachments className="mb-2">
-                  {chatMessage.attachments.map((attachment: FileUIPart, idx: number) => (
-                    <MessageAttachment key={`${key}-attachment-${idx}`} data={attachment as any} />
-                  ))}
-                </MessageAttachments>
-              )}
-
-              <MessageContent>
-                {parts.map((part, idx) => {
-                  if (part.type === "text") {
-                    return (
-                      <MessageResponse key={`${key}-part-${idx}`}>{part.content}</MessageResponse>
-                    );
-                  }
-
-                  if (part.type === "image") {
-                    return (
-                      <ImageOutput
-                        key={`${key}-part-${idx}`}
-                        currentItem={{
-                          type: "image",
-                          content: image_dict[part.id],
-                          title: "Image",
-                        }}
-                      />
-                    );
-                  }
-                })}
-              </MessageContent>
-
-              <div
-                className={cn(
-                  "flex items-center mb-0 pb-0 gap-2",
-                  isAssistant && isLastAssist ? "" : "ml-auto"
+            <>
+              <Message key={key} from={chatMessage.role as UIMessage["role"]}>
+                {chatMessage.attachments && chatMessage.attachments.length > 0 && (
+                  <MessageAttachments className="mb-2">
+                    {chatMessage.attachments.map((attachment: FileUIPart, idx: number) => (
+                      <MessageAttachment key={`${key}-attachment-${idx}`} data={attachment as any} />
+                    ))}
+                  </MessageAttachments>
                 )}
-              >
-                {isAssistant && isLastAssist && (
-                  <>
+
+                <MessageContent>
+                  {parts.map((part, idx) => {
+                    if (part.type === "text") {
+                      return (
+                        <MessageResponse key={`${key}-part-${idx}`}>{part.content}</MessageResponse>
+                      );
+                    }
+
+                    if (part.type === "image") {
+                      return (
+                        <ImageOutput
+                          key={`${key}-part-${idx}`}
+                          currentItem={{
+                            type: "image",
+                            content: image_dict[part.id],
+                            title: "Image",
+                          }}
+                        />
+                      );
+                    }
+                  })}
+                </MessageContent>
+
+                <div
+                  className={cn(
+                    "flex items-center mb-0 pb-0 gap-2",
+                    isAssistant && isLastAssist ? "" : "ml-auto"
+                  )}
+                >
+                  {isAssistant && isLastAssist && (
+                    <>
+                      <CopyButton
+                        onCopy={() => copyAssistantBlock(index)}
+                        tooltip="Copy to clipboard"
+                      />
+                      <span className="text-gray-500 text-xs align-middle">{time}</span>
+                    </>
+                  )}
+
+                  {chatMessage.role === "user" && chatMessage.content && (
                     <CopyButton
-                      onCopy={() => copyAssistantBlock(index)}
+                      onCopy={() =>
+                        navigator.clipboard.writeText(sanitizeUserContent(chatMessage.content!))
+                      }
                       tooltip="Copy to clipboard"
                     />
-                    <span className="text-gray-500 text-xs align-middle">{time}</span>
-                  </>
-                )}
+                  )}
+                </div>
+              </Message>
 
-                {chatMessage.role === "user" && chatMessage.content && (
-                  <CopyButton
-                    onCopy={() =>
-                      navigator.clipboard.writeText(sanitizeUserContent(chatMessage.content!))
-                    }
-                    tooltip="Copy to clipboard"
-                  />
-                )}
-              </div>
-            </Message>
+              {isLoading && index === chatMessages.length - 1 && (
+                <Message key={`${key}-loader`} from="assistant">
+                  <MessageContent>
+                    <div className="justify-left gap-2 flex flex-row items-center">
+                      <Loader size={16} />
+                      <span className="animate-pulse">Cognitus is thinking</span>
+                    </div>
+                  </MessageContent>
+                </Message>
+              )}
+            </>
           );
         })}
       </ConversationContent>

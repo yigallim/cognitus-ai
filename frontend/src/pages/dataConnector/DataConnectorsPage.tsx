@@ -6,6 +6,8 @@ import supabaseLogo from "../../assets/supabase-logo.webp";
 import toast from "react-hot-toast";
 import { Calendar, Database, Trash2, User } from "lucide-react";
 import { useConnections, type SavedConnection } from "@/hooks/useConnections";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 export const connectors = [
   {
@@ -31,8 +33,16 @@ function DataConnectorsPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const { connections, addConnection, removeConnection } = useConnections();
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConnectorId, setDeleteConnectorId] = useState<string | null>(null);
+  const [deleteTitle, setDeleteTitle] = useState<string>("");
 
   const handleConnect = (data: Record<string, string>) => {
+    const sameName = connections.find((c) => c.connectionName === data.connectionName);
+    if (sameName) {
+      toast.error("Connection name already exists. Please enter a different name.");
+      return;
+    }
     setIsLoading(true);
 
     setTimeout(() => {
@@ -148,16 +158,54 @@ function DataConnectorsPage() {
                   </div>
 
                   <div className="col-span-3 flex justify-end">
-                    <button
+                    <Button
+                      variant="ghost"
                       className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition-all"
-                      onClick={() => removeConnection(conn.id)}
+                      onClick={() => {
+                        setDeleteConnectorId(conn.id);
+                        setDeleteTitle(conn.connectionName);
+                        setDeleteOpen(true);
+                      }}
                     >
                       <Trash2 className="w-4 h-4" />
-                    </button>
+                    </Button>
                   </div>
-
                 </div>
               ))}
+
+              <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                <DialogContent className="rounded-lg">
+                  <DialogHeader>
+                    <DialogTitle>Delete Data Connector</DialogTitle>
+                    <DialogDescription>
+                      This will permanently delete the connection of "{deleteTitle}". This action
+                      cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setDeleteOpen(false);
+                        setDeleteConnectorId(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        setDeleteOpen(false);
+                        setDeleteConnectorId(null);
+                        removeConnection(deleteConnectorId!);
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
             </div>
           </div>
         </div>
