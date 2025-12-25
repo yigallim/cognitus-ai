@@ -7,12 +7,14 @@ import { z } from "zod";
 import FormField from "./FormField";
 import getTooltips from "./ConnectionTooltips";
 import { connectors } from "@/pages/dataConnector/DataConnectorsPage";
+import { Loader2 } from "lucide-react";
 
 type Props = {
     open: boolean;
     onClose: () => void;
     type: "MySQL" | "PostgreSQL" | "Supabase";
     onConnect: (data: Record<string, string>) => void;
+    isLoading: boolean;
 }
 
 const connectorSchema = z.object({
@@ -57,7 +59,7 @@ const connectorSchema = z.object({
 
 type ConnectorForm = z.infer<typeof connectorSchema>;
 
-function DatabaseConnectorModel({ open, onClose, type, onConnect }: Props) {
+function DatabaseConnectorModel({ open, onClose, type, onConnect, isLoading }: Props) {
     const { handleSubmit, register, reset, control, setValue, clearErrors, formState: { errors }, } = useForm<ConnectorForm>({
         resolver: zodResolver(connectorSchema)
     });
@@ -101,7 +103,7 @@ function DatabaseConnectorModel({ open, onClose, type, onConnect }: Props) {
     const showSSH = type !== "Supabase" && connectType === "ssh";
 
     return (
-        <Dialog open={open} onOpenChange={onClose}>
+        <Dialog open={open} onOpenChange={isLoading ? undefined : onClose}>
             <DialogContent className="max-w-lg sm:max-w-[800px] w-full max-h-[80vh] flex flex-col p-6">
                 <DialogHeader className="pb-2">
                     <DialogTitle className="text-lg font-semibold">
@@ -220,8 +222,15 @@ function DatabaseConnectorModel({ open, onClose, type, onConnect }: Props) {
                 </div>
 
                 <DialogFooter className="pt-4 col-span-full">
-                    <Button form="connector-form" type="submit" className="w-full">
-                        Connect
+                    <Button form="connector-form" type="submit" className="w-full" disabled={isLoading}>
+                        {isLoading ? (
+                            <>
+                                <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                                Connecting...  
+                            </>
+                        ) : (
+                            "Connect"
+                        )}
                     </Button>
                 </DialogFooter>
 

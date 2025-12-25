@@ -5,7 +5,7 @@ import { Database, FileCode, FileIcon, FileJson, FileSpreadsheet, FileText } fro
 export type MentionItem = {
     id: string;
     name: string;
-    type: "file" | "database";
+    type: "file" | "database" | string;
     category: "Files" | "Databases";
     originalData?: any; // store original file object for real files
 };
@@ -73,8 +73,8 @@ function MentionsMenu({ suggestions, activeIndex, onSelect }: MentionsMenuProps)
                     const showHeader = index === 0 || suggestions[index - 1].category !== item.category;
                     const isActive = index === activeIndex;
 
-                    const AttachmentIcon = item.type === "database" ? Database : getAttachmentIcon(item.name);
-                    const iconColor = item.type === "database" ? "text-green-500" : "text-blue-500";
+                    const AttachmentIcon = item.category === "Databases" ? Database : getAttachmentIcon(item.name);
+                    const iconColor = item.category === "Databases" ? "text-green-500" : "text-blue-500";
 
                     return (
                         <div key={item.id}>

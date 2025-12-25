@@ -16,7 +16,7 @@ const connectorTooltips: Record<string, Record<string, string>> = {
         ssh_password: "SSH password (if not using key)."
     },
     PostgreSQL: {
-    user: "PostgreSQL username/role with database access, created by administrator or default like 'postfres'.",
+        user: "PostgreSQL username/role with database access, created by administrator or default like 'postfres'.",
         password: "Password for the PostgreSQL user account, set by database administrator.",
         host: "Hostname or IP address where PostgreSQL server runs (e.g., '192.168.1.100', or domain name).",
         port: "Port number PostgreSQL listens on, typically '5432' unless configured differently by administrator.",
@@ -39,12 +39,12 @@ const connectorTooltips: Record<string, Record<string, string>> = {
     }
 };
 
-const connectionName = 
+const connectionName =
     "A custom name you provide to identify this connection, helpful when managing multiple database connections " +
     "Names cannot start with a number. Choose a descriptive name like \"Production DB\" or \"Analytics Warehouse\" " +
     "to easily distinguish between connections.";
 
-export default function getTooltips({type, field}: {type: string, field: string}): string {
-    const tooltips = field === "connectionName" ?  connectionName : connectorTooltips[type]?.[field];
+export default function getTooltips({ type, field }: { type: string, field: string }): string {
+    const tooltips = field === "connectionName" ? connectionName : connectorTooltips[type]?.[field];
     return tooltips;
 }

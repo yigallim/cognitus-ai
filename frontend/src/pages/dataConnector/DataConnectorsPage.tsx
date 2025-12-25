@@ -3,6 +3,9 @@ import DatabaseConnectorModel from "./DatabaseConnectorModel";
 import postgreLogo from "../../assets/Postgres_logo.webp";
 import mysqlLogo from "../../assets/mysql_logo.webp";
 import supabaseLogo from "../../assets/supabase-logo.webp";
+import toast from "react-hot-toast";
+import { Calendar, Database, Trash2, User } from "lucide-react";
+import { useConnections, type SavedConnection } from "@/hooks/useConnections";
 
 export const connectors = [
   {
@@ -25,14 +28,34 @@ export const connectors = [
 function DataConnectorsPage() {
   const [open, setOpen] = useState(false);
   const [selectedType, setSelectedType] = useState<"MySQL" | "PostgreSQL" | "Supabase">("MySQL");
+  const [isLoading, setIsLoading] = useState(false);
 
-  // temp
+  const { connections, addConnection, removeConnection } = useConnections();
+
   const handleConnect = (data: Record<string, string>) => {
-    console.log("Connecting to:", selectedType);
-    console.log("Connection details:", data);
-    setOpen(false);
+    setIsLoading(true);
 
-    // TODO: Send connection data to backend
+    setTimeout(() => {
+      const newConnection: SavedConnection = {
+        id: crypto.randomUUID(),
+        type: selectedType,
+        connectionName: data.connectionName,
+        user: data.user,
+        database: data.database,
+        details: data,
+        createdAt: new Date().toISOString(),
+      };
+      addConnection(newConnection);
+
+      setIsLoading(false);
+      setOpen(false);
+
+      toast.success("Connection successful");
+    }, 1000);
+  };
+
+  const getIcon = (type: string) => {
+    return connectors.find(c => c.name === type)?.icon;
   };
 
   return (
@@ -77,8 +100,68 @@ function DataConnectorsPage() {
           onClose={() => setOpen(false)}
           type={selectedType}
           onConnect={handleConnect}
+          isLoading={isLoading}
         />
       </div>
+
+      {connections.length > 0 && (
+        <div className="pt-4">
+          <h3 className="text-xl font-semibold text-text-title-light mb-4">Active Connections</h3>
+
+          <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+            {/* Table Header */}
+            <div className="grid grid-cols-15 gap-4 p-4 border-b border-gray-100 bg-gray-50 text-sm font-medium text-gray-500">
+              <div className="col-span-3">Name & Type</div>
+              <div className="col-span-3">Database Name</div>
+              <div className="col-span-3">User</div>
+              <div className="col-span-3">Created At</div>
+              <div className="col-span-3 text-right">Action</div>
+            </div>
+
+            {/* List Items */}
+            <div className="divide-y divide-gray-100 text-font-medium text-foreground">
+              {connections.map((conn) => (
+                <div key={conn.id} className=" grid grid-cols-15 gap-4 p-4 items-center hover:bg-gray-50 transition-colors">
+                  <div className="col-span-3 flex items-center gap-3">
+                    <div className="w-8 h-8 flex-shrink-0 bg-white border border-gray-200 rounded-full flex items-center justify-center p-1.5">
+                      <img src={getIcon(conn.type)} alt={conn.type} className="w-full h-full object-contain" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-text-title-light truncate">{conn.connectionName}</p>
+                      <p className="text-xs text-gray-400">{conn.type}</p>
+                    </div>
+                  </div>
+
+                  <div className="col-span-3 flex items-center gap-2 text-sm text-gray-600">
+                    <Database className="w-4 h-4 text-gray-400" />
+                    <span className="truncate">{conn.database}</span>
+                  </div>
+
+                  <div className="col-span-3 flex items-center gap-2 text-sm text-gray-600">
+                    <User className="w-4 h-4 text-gray-400" />
+                    <span className="truncate">{conn.user}</span>
+                  </div>
+
+                  <div className="col-span-3 flex items-center gap-2 text-sm text-gray-600">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <span className="truncate">{conn.createdAt}</span>
+                  </div>
+
+                  <div className="col-span-3 flex justify-end">
+                    <button
+                      className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition-all"
+                      onClick={() => removeConnection(conn.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

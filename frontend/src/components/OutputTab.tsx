@@ -5,7 +5,6 @@ import { getOutputBoxItem } from "./ai-elements/tool";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { DataTable } from "./Table";
-import { MessageResponse } from "./ai-elements/message";
 import ImageOutput from "./ImageOutput";
 
 export type OutputTabProps = {

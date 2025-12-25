@@ -75,6 +75,7 @@ import {
 import MentionsMenu, { type MentionItem } from "../MentionMenu";
 import { useQuery } from "@tanstack/react-query";
 import { fetchFiles } from "@/api/files";
+import { useConnections } from "@/hooks/useConnections";
 
 // ============================================================================
 // Provider Context & Types
@@ -832,6 +833,7 @@ export const PromptInputTextarea = ({
     staleTime: 1000 * 60 * 5, // Cache for 5 mins
     enabled: mentionQuery !== null, // Only fetch/active when typing mention 
   });
+  const { connections } = useConnections();
 
   // -- Calculate Suggestions (Real Files + Mock DBs) --
   const suggestions = useMemo(() => {
@@ -851,9 +853,12 @@ export const PromptInputTextarea = ({
       }));
 
     // Filter Databases
-    const database: MentionItem[] = [
-      { id: "db1", name: "MySql", type: "database", category: "Databases" }
-    ];
+    const database: MentionItem[] = connections.map(conn => ({
+      id: conn.id,
+      name: conn.connectionName,
+      type: conn.type,
+      category: "Databases"
+    }));
 
     const dbItems = database.filter((db) =>
       db.name.toLowerCase().includes(lowerQuery)
@@ -896,7 +901,7 @@ export const PromptInputTextarea = ({
       onChange?.({ target: textarea, currentTarget: textarea } as any);
     }
 
-    // Add Attachment
+    // Add Attachment (** Pending modified)
     if (item.type === 'file') {
       // Pass the object structure. PromptInputProvider handles objects with 'id' 
       // by generating the /api/files/download/{id} URL automatically.
@@ -904,7 +909,7 @@ export const PromptInputTextarea = ({
         id: item.id,
         name: item.name,
         filename: item.name,
-        type: item.originalData.content_type
+        type: item.originalData?.content_type
       }] as any);
     } else {
       // For Databases (Mock) - Virtual File
