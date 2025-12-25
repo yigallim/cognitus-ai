@@ -1,0 +1,28 @@
+Jupyter Kernel Gateway 3.0.1 is available at http://127.0.0.1:8888
+Kernel started: 71b13f14-168b-45de-8ecf-8855c4bef4ac
+No session ID specified
+Adapting from protocol version 5.3 (kernel 71b13f14-168b-45de-8ecf-8855c4bef4ac) to 5.4 (client).
+Connecting to kernel 71b13f14-168b-45de-8ecf-8855c4bef4ac.
+interrupted
+received signal 2, stopping
+Shutting down...
+Kernel shutdown: 71b13f14-168b-45de-8ecf-8855c4bef4ac
+Kernel shutdown: 71b13f14-168b-45de-8ecf-8855c4bef4ac
+Jupyter Kernel Gateway 3.0.1 is available at http://127.0.0.1:8888
+Kernel started: d4f6cedc-8f14-4985-a084-886c34d6bb0a
+No session ID specified
+Adapting from protocol version 5.3 (kernel d4f6cedc-8f14-4985-a084-886c34d6bb0a) to 5.4 (client).
+Connecting to kernel d4f6cedc-8f14-4985-a084-886c34d6bb0a.
+interrupted
+Shutting down...
+Kernel shutdown: d4f6cedc-8f14-4985-a084-886c34d6bb0a
+Jupyter Kernel Gateway 3.0.1 is available at http://127.0.0.1:8888
+Kernel started: 8bff2f3e-f154-4ac6-b190-cb8dae96d902
+No session ID specified
+Adapting from protocol version 5.3 (kernel 8bff2f3e-f154-4ac6-b190-cb8dae96d902) to 5.4 (client).
+Connecting to kernel 8bff2f3e-f154-4ac6-b190-cb8dae96d902.
+interrupted
+received signal 2, stopping
+Shutting down...
+Kernel shutdown: 8bff2f3e-f154-4ac6-b190-cb8dae96d902
+Kernel shutdown: 8bff2f3e-f154-4ac6-b190-cb8dae96d902

@@ -2,13 +2,15 @@ import json
 from typing import List, Annotated, Any
 import httpx
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.responses import StreamingResponse
 
 from cognitus_ai.utils.parse_action import parse_action
 from .schemas import AssistantMessage, Chat, ChatCreate, ChatUpdate, SystemMessage, UserMessage
 from .repository import chat_repository
 from ..auth.dependencies import get_current_user
 from ..auth.schemas import User
+from ..database import redis_client
 
 router = APIRouter(prefix="/chats", tags=["chats"])
 
@@ -156,6 +158,77 @@ async def forward_to_local_agent(
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Failed to reach upstream: {e}")
 
     return resp.json()
+
+@router.get("/{chat_id}/stream")
+async def stream_chat_history_sse(
+    chat_id: str,
+    request: Request,
+    current_user: Annotated[User, Depends(get_current_user)]
+):
+    """Stream chat history events from Redis Stream as SSE.
+
+    Uses Redis Stream at key `stream:{chat_id}:history` and emits each
+    entry's `data` field (JSON string) as the SSE `data` payload.
+    """
+
+    # Validate chat ownership/access
+    chat = await chat_repository.get_by_id(chat_id, current_user.email)
+    if not chat:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found")
+
+    stream_key = f"stream:{chat_id}:history"
+    last_id: str = "0"
+
+    # Maintain context by starting with the existing chat history
+    history_buffer: List[dict[str, Any]] = list(chat.history or [])
+    processed_len: int = len(_process_history(history_buffer))
+
+    async def event_generator():
+        nonlocal last_id, processed_len
+        while True:
+            if await request.is_disconnected():
+                break
+
+            try:
+                events = await redis_client.xread({stream_key: last_id}, block=2000)
+            except Exception as e:
+                yield f"event: error\ndata: {json.dumps({'error': str(e)})}\n\n"
+                break
+
+            if not events:
+                continue
+
+            for _, messages in events:
+                for msg_id, payload in messages:
+                    raw_json = payload.get("data")
+                    if raw_json:
+                        try:
+                            msg_dict = json.loads(raw_json)
+                        except Exception:
+                            # If payload is already a dict or malformed, skip gracefully
+                            msg_dict = payload.get("data") if isinstance(payload.get("data"), dict) else None
+
+                        if isinstance(msg_dict, dict):
+                            # Append new message to the history buffer for contextual processing
+                            history_buffer.append(msg_dict)
+                            processed_now = _process_history(history_buffer)
+                            new_items = processed_now[processed_len:]
+
+                            for item in new_items:
+                                # Stream processed item as SSE
+                                yield f"id: {msg_id}\nevent: message\ndata: {json.dumps(item)}\n\n"
+
+                            processed_len = len(processed_now)
+
+                    last_id = msg_id
+
+    headers = {
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no"  # Disable buffering on some proxies
+    }
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream", headers=headers)
 
 @router.patch("/{chat_id}", response_model=Chat)
 async def rename_chat(
