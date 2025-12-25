@@ -148,22 +148,24 @@ function ChatMessages({ chatId, chatMessages, image_dict }: { chatId: string; ch
             chatMessage.role === "assistant" &&
             chatMessage.function_call &&
             (chatMessage.function_call.name === "execute_code" ||
-              chatMessage.function_call.name === "execute_sql")
+              chatMessage.function_call.name === "execute_sql" ||
+              chatMessage.function_call.name === "export_as_csv")
           ) {
+            const isPythonCode = chatMessage.function_call.name === "execute_code";
+            const isExport = chatMessage.function_call.name === "export_as_csv";
+
             const outputs = getOutputs(chatMessage.id);
             const code = chatMessage.function_call.content;
             const showCopyBar = isLastAssistantInBlock(index);
-
-            const isPythonCode = chatMessage.function_call.name === "execute_code";
 
             return (
               <Message key={key} from="assistant">
                 <MessageContent>
                   <ExpandedCodeBlock
-                    title={isPythonCode ? "Code" : "SQL Query"}
+                    title={isPythonCode ? "Code" : isExport ? "Export as CSV" : "SQL Query"}
                     language={isPythonCode ? "python" : "MySQL"}
                     code={code}
-                    codeExplanation={isPythonCode ? "Executed code block" : "Executed SQL query"}
+                    codeExplanation={chatMessage.function_call.explanation}
                     outputs={outputs}
                   />
                 </MessageContent>

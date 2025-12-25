@@ -17,6 +17,7 @@ interface AssistantMessage {
   function_call?: {
     name: string;
     content: string;
+    explanation: string;
   };
   attachments?: FileUIPart[];
 }
@@ -24,7 +25,7 @@ interface AssistantMessage {
 interface FunctionMessage {
   id: string;
   role: "function";
-  name: string;
+  // name: string;
   belongsTo: string;
   output: string;
 }
@@ -122,6 +123,7 @@ data = pd.read_csv(file_path)
 
 # Display the first few rows of the dataset to understand its structure
 data.head()`,
+      explanation: `The code imports the pandas library and loads the dataset from the specified CSV file path. It then displays the first few rows of the dataset to help understand its structure and contents. This is a preliminary step before performing any calculations, such as calculating the mean fare paid by passengers.`,
     },
   },
   {
@@ -134,12 +136,13 @@ mean_fare = data['Fare'].mean()  # Using the correct column name
 mean_fare_rounded = round(mean_fare, 2)
 
 mean_fare_rounded`,
+      explanation: `The code calculates the mean fare paid by passengers using the 'Fare' column from the dataset. It then rounds the result to two decimal places for better readability. Finally, it outputs the rounded mean fare value.`,
     },
   },
   {
     id: "4",
     role: "function",
-    name: "run_code",
+
     belongsTo: "2",
     output: `{
   "[table]-2d0c2b2b": {
@@ -171,7 +174,7 @@ mean_fare_rounded`,
   {
     id: "5",
     role: "function",
-    name: "run_code",
+
     belongsTo: "3",
     output: `{ "[text]-2573c8b1": "34.65", "[image]-2573c8b2": "xbl9ls3909txdouu",
     "[table]-2573c8b1": {
@@ -205,12 +208,12 @@ FROM customers
 JOIN orders ON customers.id = orders.customer_id
 WHERE orders.total_amount > 100
 ORDER BY orders.order_date DESC;`,
+      explanation: `The SQL query retrieves the names of customers along with their order dates and total amounts for orders where the total amount exceeds 100. It joins the 'customers' and 'orders' tables on the customer ID and orders the results by the order date in descending order.`
     },
   },
   {
     id: "7",
     role: "function",
-    name: "run_code",
     belongsTo: "6",
     output: `{ 
     "[table]-1245bg18": {
@@ -235,6 +238,25 @@ ORDER BY orders.order_date DESC;`,
   },
   {
     id: "8",
+    role: "assistant",
+    function_call: {
+      name: "export_as_csv",
+      content: `SELECT customers.name, orders.order_date, orders.total_amount
+FROM customers
+JOIN orders ON customers.id = orders.customer_id
+WHERE orders.total_amount > 100
+ORDER BY orders.order_date DESC;`,
+      explanation: `The SQL query retrieves the names of customers along with their order dates and total amounts for orders where the total amount exceeds 100. It joins the 'customers' and 'orders' tables on the customer ID and orders the results by the order date in descending order.`
+    },
+  },
+  {
+    id: "9",
+    role: "function",
+    belongsTo: "8",
+    output: `{"[text]-2573c8b1": "The table has been exported as exported_data.csv." }`,
+  },
+  {
+    id: "10",
     role: "assistant",
     content: `
 # Summary of the Analysis
