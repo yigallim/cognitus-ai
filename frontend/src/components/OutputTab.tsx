@@ -93,7 +93,7 @@ function OutputTab({ item, allOutputItems }: OutputTabProps) {
                 </div>
             </SheetHeader>
 
-            <div className={cn("flex flex-1 flex-col overflow-auto w-full p-4 pt-1 bg-background", currentItem.type === "table" ? "overflow-hidden" : "")}>
+            <div className={cn("flex flex-1 flex-col overflow-auto w-full p-4 pt-0 bg-background", currentItem.type === "table" ? "overflow-hidden" : "")}>
                 <div className="w-full max-w-full justify-center items-start">
                     {currentItem.type === "table" && (
                         <DataTable table={currentItem.content as any} longTable={true} />
