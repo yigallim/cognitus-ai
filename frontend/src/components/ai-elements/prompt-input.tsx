@@ -860,7 +860,7 @@ export const PromptInputTextarea = ({
     // Filter Databases
     const database: MentionItem[] = connections.map(conn => ({
       id: conn.id,
-      name: conn.connectionName,
+      name: conn.database,
       type: conn.type,
       category: "Databases",
       originalData: conn

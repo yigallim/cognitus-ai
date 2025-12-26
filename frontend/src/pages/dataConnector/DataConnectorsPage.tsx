@@ -37,6 +37,20 @@ function DataConnectorsPage() {
   const [deleteConnectorId, setDeleteConnectorId] = useState<string | null>(null);
   const [deleteTitle, setDeleteTitle] = useState<string>("");
 
+  function formatCreatedAt(iso: string): string {
+    return new Date(iso)
+      .toLocaleString("en-GB", {
+        timeZone: "Asia/Kuala_Lumpur",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      })
+      .replace(",", "");
+  }
+
   const handleConnect = (data: Record<string, string>) => {
     const sameName = connections.find((c) => c.connectionName === data.connectionName);
     if (sameName) {
@@ -53,7 +67,7 @@ function DataConnectorsPage() {
         user: data.user,
         database: data.database,
         details: data,
-        createdAt: new Date().toISOString(),
+        createdAt: formatCreatedAt(new Date().toISOString()),
       };
       addConnection(newConnection);
 

@@ -163,8 +163,6 @@ function ChatMessages({
     navigator.clipboard.writeText(text.trim());
   };
 
-  const time = "Dec 21, 06:02:04 PM"; //temporary hardcoded time
-
   return (
     <>
       <ConversationContent>
@@ -209,7 +207,6 @@ function ChatMessages({
                       onCopy={() => copyAssistantBlock(index)}
                       tooltip="Copy to clipboard"
                     />
-                    <span className="text-gray-500 text-xs align-middle">{time}</span>
                   </div>
                 )}
               </Message>
@@ -270,7 +267,6 @@ function ChatMessages({
                         onCopy={() => copyAssistantBlock(index)}
                         tooltip="Copy to clipboard"
                       />
-                      <span className="text-gray-500 text-xs align-middle">{time}</span>
                     </>
                   )}
 
