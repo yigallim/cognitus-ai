@@ -45,11 +45,9 @@ function ChatInput({ chatId, chatMessages, setChatMessages, newChat, files }: Ch
   async function sendMessage(message: PromptInputMessage) {
     const hasText = Boolean(message.text);
     const hasAttachments = Boolean(message.files?.length);
-
     if (!(hasText || hasAttachments)) {
       return;
     }
-
     const newChatMessages: ChatMessage[] = [
       ...chatMessages,
       {
@@ -59,7 +57,8 @@ function ChatInput({ chatId, chatMessages, setChatMessages, newChat, files }: Ch
         attachments: message.files,
       },
     ];
-
+    const databaseName = message.files[0]?.filename;
+    console.log("haha");
     // Optimistically add the user message
     setChatMessages(newChatMessages);
 
@@ -67,7 +66,7 @@ function ChatInput({ chatId, chatMessages, setChatMessages, newChat, files }: Ch
     let targetChatId = chatId;
     const isNewChat = newChat;
     if (isNewChat) {
-      const chat = await createChat("Chat", message.text ?? "");
+      const chat = await createChat("Chat", message.text ?? "", databaseName ?? "");
       if (chat?.id) {
         targetChatId = chat.id;
         navigate(`/chats/${chat.id}`, { replace: true });
@@ -78,6 +77,7 @@ function ChatInput({ chatId, chatMessages, setChatMessages, newChat, files }: Ch
         if (targetChatId) {
           await sendAgentInstruction(targetChatId, {
             user_instruction: message.text ?? "",
+            database_name: databaseName ?? "",
           });
         }
       } catch (e) {

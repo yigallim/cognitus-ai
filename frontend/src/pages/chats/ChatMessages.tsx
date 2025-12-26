@@ -177,7 +177,7 @@ function ChatMessages({
             chatMessage.role === "assistant" &&
             chatMessage.function_call &&
             (chatMessage.function_call.name === "execute_code" ||
-              chatMessage.function_call.name === "execute_sql" ||
+              chatMessage.function_call.name === "execute_sql_query" ||
               chatMessage.function_call.name === "export_as_csv")
           ) {
             const isPythonCode = chatMessage.function_call.name === "execute_code";

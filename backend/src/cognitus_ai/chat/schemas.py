@@ -61,6 +61,7 @@ class ChatBase(BaseModel):
 
 class ChatCreate(ChatBase):
     user_instruction: Optional[str] = None
+    database_name: str | None = None
 
 class ChatUpdate(BaseModel):
     title: Optional[str] = None

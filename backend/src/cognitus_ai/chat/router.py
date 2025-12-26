@@ -18,6 +18,7 @@ router = APIRouter(prefix="/chats", tags=["chats"])
 
 class ChatInstruction(BaseModel):
     user_instruction: str
+    database_name: str | None = None
 
 def _process_history(history: List[dict[str, Any]]) -> List[dict[str, Any]]:
     processed: List[dict[str, Any]] = []
@@ -116,7 +117,7 @@ async def create_chat(
     # Also forward to local agent; don't fail creation on upstream errors
     try:
         if instruction:
-            await forward_request_to_agent(str(chat.id), instruction)
+            await forward_request_to_agent(str(chat.id), instruction, chat_in.database_name)
     except Exception:
         # Intentionally swallow errors here; chat creation should succeed regardless
         pass
@@ -173,12 +174,8 @@ async def forward_to_local_agent(
             },
         )
 
-    payload = {
-        "user_instruction": body.user_instruction,
-        "session_id": chat_id,
-    }
     try:
-        resp_json = await forward_request_to_agent(chat_id, body.user_instruction)
+        resp_json = await forward_request_to_agent(chat_id, body.user_instruction, body.database_name)
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
     except httpx.RequestError as e:

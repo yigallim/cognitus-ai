@@ -12,7 +12,11 @@ interface ChatState {
   loading: boolean;
   error: string | null;
   fetchChats: () => Promise<void>;
-  createChat: (title?: string, user_instruction?: string) => Promise<Chat | null>;
+  createChat: (
+    title?: string,
+    user_instruction?: string,
+    database_name?: string
+  ) => Promise<Chat | null>;
   deleteChat: (chatId: string) => Promise<boolean>;
   renameChat: (chatId: string, title?: string) => Promise<Chat | null>;
 }
@@ -32,10 +36,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  createChat: async (title = "Chat", user_instruction) => {
+  createChat: async (title = "Chat", user_instruction?: string, database_name?: string) => {
     try {
       set({ loading: true, error: null });
-      const chat = await apiCreateChat({ title, user_instruction });
+      const chat = await apiCreateChat({ title, user_instruction, database_name });
       set({ chats: [chat, ...get().chats], loading: false });
       return chat;
     } catch (err: any) {

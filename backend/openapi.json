@@ -839,6 +839,17 @@
               }
             ],
             "title": "User Instruction"
+          },
+          "database_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Database Name"
           }
         },
         "type": "object",
@@ -852,6 +863,17 @@
           "user_instruction": {
             "type": "string",
             "title": "User Instruction"
+          },
+          "database_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Database Name"
           }
         },
         "type": "object",

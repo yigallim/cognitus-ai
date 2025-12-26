@@ -13,6 +13,7 @@ export type Chat = {
 export type ChatCreate = {
   title: string;
   user_instruction?: string;
+  database_name?: string;
 };
 
 export type ChatUpdate = {
@@ -46,6 +47,7 @@ export const deleteChat = async (chatId: string): Promise<void> => {
 // Interact with the agent for a specific chat
 export type AgentInstructionPayload = {
   user_instruction: string;
+  database_name?: string;
 };
 
 export const sendAgentInstruction = async (
